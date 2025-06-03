@@ -8,7 +8,7 @@ const Footer = () => {
       <div className='flex flex-col sm:flex-row items-center justify-evenly text-white text-4xl'>
         <Link href='/' legacyBehavior>
           <Image
-            src='/IndianCoffee_Logo.png'
+            src='/IndianCoffee_Logo.webp'
             alt='Indian Coffee'
             width={150}
             height={150}
@@ -58,7 +58,7 @@ const Footer = () => {
           legacyBehavior>
           <div className='flex flex-col items-center mt-8 sm:mt-0 hover:text-[#775e28] duration-500 ease-in-out'>
             <span className='text-lg font-bold'>Scannez-moi</span>
-            <Image src='/qr-code.png' alt='qr-code' width={100} height={100} />
+            <Image src='/qr-code.webp' alt='qr-code' width={100} height={100} />
           </div>
         </Link>
       </div>

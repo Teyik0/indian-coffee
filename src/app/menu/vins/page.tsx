@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Vins | Indian Coffee',
   description: 'Tous les vins à la carte, que ce soit à emporter ou sur place.',

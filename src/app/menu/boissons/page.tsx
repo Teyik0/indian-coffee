@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Plats | Indian Coffee',
   description:

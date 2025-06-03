@@ -16,14 +16,14 @@ const DescBanner = () => {
         tout en voyageant au cœur de l’Inde.
       </p>
       <Image
-        src='/Femme.png'
+        src='/Femme.webp'
         alt='femme'
         width={400}
         height={150}
         className='z-50 absolute left-0 translate-y-48 hidden sm:flex'
       />
       <Image
-        src='/Homme.png'
+        src='/Homme.webp'
         alt='homme'
         width={400}
         height={150}

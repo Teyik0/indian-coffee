@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Accueil | Indian Coffee - Fast food indien à Savigny le Temple',
   description:

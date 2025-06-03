@@ -37,7 +37,7 @@ const Discover = () => {
         </Link>
       </div>
       <Image
-        src='/histoire.png'
+        src='/histoire.webp'
         alt='butter-chicken'
         width={600}
         height={50}

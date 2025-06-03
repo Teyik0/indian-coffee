@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Plats | Indian Coffee',
   description:
@@ -29,14 +29,14 @@ const page = () => {
   return (
     <section className='w-full items-center justify-center text-white pb-24'>
       <Image
-        src='/asset-plat.png'
+        src='/asset-plat.webp'
         width={500}
         height={150}
         alt='logo'
         className='hidden absolute sm:flex xl:hidden top-0 right-0 z-0'
       />
       <Image
-        src='/asset-plat.png'
+        src='/asset-plat.webp'
         width={550}
         height={150}
         alt='logo'

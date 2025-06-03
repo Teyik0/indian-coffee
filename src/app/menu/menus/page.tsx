@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Menus | Indian Coffee - Tous nos menus',
   description:
@@ -28,14 +28,14 @@ const page = () => {
   return (
     <section className='w-full items-center justify-center text-white pb-32'>
       <Image
-        src='/asset-menu.png'
+        src='/asset-menu.webp'
         width={500}
         height={150}
         alt='logo'
         className='hidden absolute xl:flex top-0 right-0 z-0'
       />
       <Image
-        src='/asset-menu.png'
+        src='/asset-menu.webp'
         width={250}
         height={150}
         alt='logo'
@@ -77,14 +77,14 @@ const page = () => {
         </h4>
 
         <Image
-          src='/asset-menu2.png'
+          src='/asset-menu2.webp'
           width={500}
           height={150}
           alt='logo'
           className='hidden absolute xl:flex left-0 z-0'
         />
         <Image
-          src='/asset-menu2.png'
+          src='/asset-menu2.webp'
           width={270}
           height={150}
           alt='logo'
@@ -130,14 +130,14 @@ const page = () => {
         </h4>
 
         <Image
-          src='/asset-menu4.png'
+          src='/asset-menu4.webp'
           width={300}
           height={150}
           alt='logo'
           className='hidden absolute xl:flex right-10 z-0'
         />
         <Image
-          src='/asset-menu4.png'
+          src='/asset-menu4.webp'
           width={240}
           height={150}
           alt='logo'

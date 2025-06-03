@@ -43,69 +43,69 @@ a {
 }
 
 .bg-image {
-  background-image: url('/cover1.png');
+  background-image: url('/cover1.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image2 {
-  background-image: url('/cover2.png');
+  background-image: url('/cover2.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image3 {
-  background-image: url('/cover3.png');
+  background-image: url('/cover3.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image4 {
-  background-image: url('/cover4.png');
+  background-image: url('/cover4.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image5 {
   background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.57), #222),
-    url('/cover5.png');
+    url('/cover5.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 
 .bg-image-entry {
-  background-image: url('/Rolls.jpg');
+  background-image: url('/Rolls.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image-plats {
-  background-image: url('/Kottu-Roti.jpg');
+  background-image: url('/Kottu-Roti.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image-special {
-  background-image: url('/Le-butter-chicken.jpg');
+  background-image: url('/Le-butter-chicken.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image-menu {
-  background-image: url('/Poulet-Tikka.jpg');
+  background-image: url('/Poulet-Tikka.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image-boissons {
-  background-image: url('/Falooda.jpg');
+  background-image: url('/Falooda.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
 .bg-image-desserts {
-  background-image: url('/Salade De Fruits.jpg');
+  background-image: url('/Salade De Fruits.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -117,13 +117,13 @@ a {
   background-size: cover;
 }
 .bg-entry {
-  background-image: url('/asset-entry.png');
+  background-image: url('/asset-entry.webp');
   background-repeat: no-repeat;
   background-position: right;
   background-size: contain;
 }
 .bg-vins {
-  background-image: url('/asset-entry.png');
+  background-image: url('/asset-entry.webp');
   background-repeat: no-repeat;
   background-position: right;
   background-size: contain;

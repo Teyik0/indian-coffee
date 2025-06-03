@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Galerie | Toutes les photos du restaurant Indian Coffee',
   description:
@@ -26,60 +26,60 @@ export const metadata: Metadata = {
 };
 
 const photoEvent = [
-  { img: '/gallerie/evenement/1.jpg' },
-  { img: '/gallerie/evenement/2.jpg' },
-  { img: '/gallerie/evenement/3.jpg' },
-  { img: '/gallerie/evenement/4.jpg' },
-  { img: '/gallerie/evenement/5.jpg' },
-  { img: '/gallerie/evenement/6.jpg' },
-  { img: '/gallerie/evenement/7.jpg' },
+  { img: '/gallerie/evenement/1.webp' },
+  { img: '/gallerie/evenement/2.webp' },
+  { img: '/gallerie/evenement/3.webp' },
+  { img: '/gallerie/evenement/4.webp' },
+  { img: '/gallerie/evenement/5.webp' },
+  { img: '/gallerie/evenement/6.webp' },
+  { img: '/gallerie/evenement/7.webp' },
 ];
 
 const photoDessert = [
-  { img: '/gallerie/dessert/1.jpg' },
-  { img: '/gallerie/dessert/2.jpg' },
-  { img: '/gallerie/dessert/3.jpg' },
-  { img: '/gallerie/dessert/4.jpg' },
-  { img: '/gallerie/dessert/5.jpg' },
-  { img: '/gallerie/dessert/6.jpg' },
-  { img: '/gallerie/dessert/7.png' },
-  { img: '/gallerie/dessert/8.png' },
+  { img: '/gallerie/dessert/1.webp' },
+  { img: '/gallerie/dessert/2.webp' },
+  { img: '/gallerie/dessert/3.webp' },
+  { img: '/gallerie/dessert/4.webp' },
+  { img: '/gallerie/dessert/5.webp' },
+  { img: '/gallerie/dessert/6.webp' },
+  { img: '/gallerie/dessert/7.webp' },
+  { img: '/gallerie/dessert/8.webp' },
 ];
 
 const photoPlat = [
-  { img: '/gallerie/plats/1.png' },
-  { img: '/gallerie/plats/2.png' },
-  { img: '/gallerie/plats/3.png' },
-  { img: '/gallerie/plats/4.jpg' },
-  { img: '/gallerie/plats/5.png' },
-  { img: '/gallerie/plats/6.jpg' },
-  { img: '/gallerie/plats/7.jpg' },
-  { img: '/gallerie/plats/8.jpg' },
-  { img: '/gallerie/plats/9.png' },
-  { img: '/gallerie/plats/10.png' },
+  { img: '/gallerie/plats/1.webp' },
+  { img: '/gallerie/plats/2.webp' },
+  { img: '/gallerie/plats/3.webp' },
+  { img: '/gallerie/plats/4.webp' },
+  { img: '/gallerie/plats/5.webp' },
+  { img: '/gallerie/plats/6.webp' },
+  { img: '/gallerie/plats/7.webp' },
+  { img: '/gallerie/plats/8.webp' },
+  { img: '/gallerie/plats/9.webp' },
+  { img: '/gallerie/plats/10.webp' },
 ];
 
 const photoSpe = [
-  { img: '/gallerie/specialite/1.jpg' },
-  { img: '/gallerie/specialite/2.jpg' },
-  { img: '/gallerie/specialite/3.jpg' },
+  { img: '/gallerie/specialite/1.webp' },
+  { img: '/gallerie/specialite/2.webp' },
+  { img: '/gallerie/specialite/3.webp' },
 ];
 
 const photoEntry = [
-  { img: '/gallerie/entree/1.jpg' },
-  { img: '/gallerie/entree/2.jpg' },
-  { img: '/gallerie/entree/3.png' },
-  { img: '/gallerie/entree/4.png' },
-  { img: '/gallerie/entree/5.jpg' },
-  { img: '/gallerie/entree/6.jpg' },
-  { img: '/gallerie/entree/7.jpg' },
-  { img: '/gallerie/entree/8.jpg' },
-  { img: '/gallerie/entree/9.jpg' },
-  { img: '/gallerie/entree/10.jpg' },
-  { img: '/gallerie/entree/11.png' },
+  { img: '/gallerie/entree/1.webp' },
+  { img: '/gallerie/entree/2.webp' },
+  { img: '/gallerie/entree/3.webp' },
+  { img: '/gallerie/entree/4.webp' },
+  { img: '/gallerie/entree/5.webp' },
+  { img: '/gallerie/entree/6.webp' },
+  { img: '/gallerie/entree/7.webp' },
+  { img: '/gallerie/entree/8.webp' },
+  { img: '/gallerie/entree/9.webp' },
+  { img: '/gallerie/entree/10.webp' },
+  { img: '/gallerie/entree/11.webp' },
 ];
 
-const photoVege = [{ img: '/gallerie/vege/1.png' }];
+const photoVege = [{ img: '/gallerie/vege/1.webp' }];
 
 const page = () => {
   return (

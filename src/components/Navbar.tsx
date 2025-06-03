@@ -29,7 +29,7 @@ const Navbar = () => {
       >
         <Link href='/'>
           <Image
-            src='/IndianCoffee_Logo.png'
+            src='/IndianCoffee_Logo.webp'
             alt='Indian Coffee'
             width={150}
             height={150}
