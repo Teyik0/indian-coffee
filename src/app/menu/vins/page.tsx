@@ -29,7 +29,7 @@ const page = () => {
       <div
         className='sm:flex justify-center items-center bg-image-vins absolute rounded-full overflow-hidden
         lg:w-[400px] lg:h-[400px] md:w-[350px] md:h-[350px] sm:w-[300px] sm:h-[300px] hidden
-        top-24 lg:top-4 right-4 z-0 border-[16px] border-[#fdc831]'
+        top-24 lg:top-4 right-4 z-0 border-16 border-[#fdc831]'
       />
       <div className='pl-4 pr-4 pt-24 sm:pt-48'>
         <h1 className='uppercase text-[#e8b755] text-2xl font-bold tracking-wider mb-2'>

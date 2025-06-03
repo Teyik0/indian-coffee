@@ -27,7 +27,7 @@ const ContactForm = () => {
 
   const styleLabel = `font-semibold text-lg text-white`;
   const styleInput = `rounded-lg p-2 font-normal text-md text-black
-  outline-none bg-white border-black border-2`;
+  outline-hidden bg-white border-black border-2`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -149,7 +149,7 @@ const ContactForm = () => {
           value={form.message}
           onChange={(e: any) => handleChange(e, 'message')}
           className={`rounded-lg p-2 font-normal text-md text-black
-            outline-none bg-white border-black border-2 min-h-[150px]`}
+            outline-hidden bg-white border-black border-2 min-h-[150px]`}
         />
       </div>
       <button

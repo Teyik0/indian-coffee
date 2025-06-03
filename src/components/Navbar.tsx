@@ -24,7 +24,7 @@ const Navbar = () => {
 	return (
 		<>
 			<div
-				className={`hidden absolute sm:flex flex-row justify-between z-[300]
+				className={`hidden absolute sm:flex flex-row justify-between z-300
       ${!carte ? "md:justify-around" : "md:justify-start"} items-center w-full`}
 			>
 				<Link href="/">

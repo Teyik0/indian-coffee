@@ -60,7 +60,7 @@ const Footer = () => {
         </Link>
       </div>
 
-      <div className='h-[1px] bg-gray-600 w-[320px] sm:w-[500px] lg:w-[800px] m-auto mt-4 mb-4' />
+      <div className='h-px bg-gray-600 w-[320px] sm:w-[500px] lg:w-[800px] m-auto mt-4 mb-4' />
       <span className='text-center text-white text-xl'>
         © <span className='font-samarkan'>INDIAN COFFEE</span>, 2023. All Rights
         Reserved.

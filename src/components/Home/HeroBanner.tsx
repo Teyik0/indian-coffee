@@ -25,7 +25,7 @@ const HeroBanner = () => {
         <button
           type="button"
           className='rounded-xl mt-12 pl-8 pr-8 pt-4 pb-4 bg-white text-black 
-        font-bold border-1 border-gray-800 hover:scale-110 duration-300 ease-in-out'
+        font-bold border border-gray-800 hover:scale-110 duration-300 ease-in-out'
         >
           Voir menu
         </button>
