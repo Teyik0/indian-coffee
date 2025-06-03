@@ -27,7 +27,7 @@ const Discover = () => {
           d'autres belles surprises pour le plaisir de vos papilles et le
           bonheur de vos familles.
         </p>
-        <Link href='/contact' legacyBehavior>
+        <Link href='/contact'>
           <p
             className='uppercase underline text-lg text-[#C6AB71] hover:text-white duration-300 ease-in-out
            font-bold italic tracking-wider mt-4 text-center'

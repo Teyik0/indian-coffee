@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import {
   DeliciousSection,
   DescBanner,
@@ -46,6 +46,7 @@ const page = () => {
           id='gmap_canvas'
           src="https://maps.google.com/maps?width=200&amp;height=200&amp;hl=fr&amp;q=8%20impasse%20de%20l'or%C3%A9e%20du%20bois%20Savigny%20Le%20Tempe+(Restaurant%20-%20Indian%20Cofee)&amp;t=&amp;z=12&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"
           className='rounded-xl'
+          title='Indian Coffee Restaurant Location Map'
         />
       </section>
     </div>

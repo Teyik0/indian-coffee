@@ -6,8 +6,8 @@ html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   background-color: #1e1e1f;
 }
 
@@ -35,7 +35,7 @@ a {
 }
 
 .font-samarkan {
-  font-family: Samarkan Normal;
+  font-family: "Samarkan Normal", sans-serif;
 }
 
 .font-caveat {

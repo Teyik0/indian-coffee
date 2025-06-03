@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { Plat, SousPlat } from '../../../components';
 
 export const metadata: Metadata = {

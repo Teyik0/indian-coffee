@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -92,8 +92,7 @@ const page = () => {
             href={item.link}
             key={item.name}
             className='relative col-span-12 sm:col-span-6 lg:col-span-4 h-[250px] hover:scale-105 duration-300 ease-in-out 
-            flex justify-center items-center cursor-pointer'
-          >
+            flex justify-center items-center cursor-pointer'>
             <Image
               src={item.imgPath}
               alt={item.name}
