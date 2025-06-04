@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.webp',
   },
   title: 'Menu | Indian Coffee - Notre carte',
   description:
@@ -30,43 +30,43 @@ const menuItems = [
     name: 'Menus',
     link: '/menu/menus',
     img: 'bg-image-menu',
-    imgPath: '/Poulet-Tikka.jpg',
+    imgPath: '/Poulet-Tikka.webp',
   },
   {
     name: 'Entrées',
     link: '/menu/entrees',
     img: 'bg-image-entry',
-    imgPath: '/Rolls.jpg',
+    imgPath: '/Rolls.webp',
   },
   {
     name: 'Plats',
     link: '/menu/plats',
     img: 'bg-image-plats',
-    imgPath: '/Kottu-Roti.jpg',
+    imgPath: '/Kottu-Roti.webp',
   },
   {
     name: 'Spécialités',
     link: '/menu/specialites',
     img: 'bg-image-special',
-    imgPath: '/Le-butter-chicken.jpg',
+    imgPath: '/Le-butter-chicken.webp',
   },
   {
     name: 'Plats végétariens',
     link: '/menu/plats-vegetariens',
     img: 'bg-image4',
-    imgPath: '/cover4.png',
+    imgPath: '/cover4.webp',
   },
   {
     name: 'Desserts',
     link: '/menu/desserts',
     img: 'bg-image-desserts',
-    imgPath: '/cover_dessert.jpg',
+    imgPath: '/cover_dessert.webp',
   },
   {
     name: 'Boissons',
     link: '/menu/boissons',
     img: 'bg-image-boissons',
-    imgPath: '/Falooda.jpg',
+    imgPath: '/Falooda.webp',
   },
   {
     name: 'Les vins',
@@ -92,8 +92,7 @@ const page = () => {
             href={item.link}
             key={item.name}
             className='relative col-span-12 sm:col-span-6 lg:col-span-4 h-[250px] hover:scale-105 duration-300 ease-in-out 
-            flex justify-center items-center cursor-pointer'
-          >
+            flex justify-center items-center cursor-pointer'>
             <Image
               src={item.imgPath}
               alt={item.name}
