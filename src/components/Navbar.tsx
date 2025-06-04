@@ -13,7 +13,7 @@ const navItems = [
 	{ name: "Contact", link: "/contact" },
 ];
 
-const Navbar = () => {
+export const Navbar = () => {
 	const [menu, setMenu] = useState(false);
 	const [carte, setCarte] = useState(false);
 	const pathname = usePathname();
@@ -78,5 +78,3 @@ const Navbar = () => {
 		</>
 	);
 };
-
-export default Navbar;
