@@ -24,7 +24,7 @@ export const HeroBanner = () => {
 			<Link href="/menu">
 				<button
 					type="button"
-					className="rounded-xl mt-12 pl-8 pr-8 pt-4 pb-4 bg-white text-black
+					className="rounded-xl mt-12 pl-8 pr-8 pt-4 pb-4 bg-white text-black cursor-pointer
         font-bold border border-gray-800 hover:scale-110 duration-300 ease-in-out"
 				>
 					Voir menu

@@ -17,12 +17,14 @@ export const Card = ({
 			{title}
 		</h3>
 		<p className="mt-4 font-semibold">{description}</p>
-		<Link
-			href={link}
-			className="rounded-xl mt-12 px-8 py-4 bg-white text-black
-      font-bold border-2 border-gray-800 hover:scale-110 duration-300 ease-in-out"
-		>
-			Cliquez ici
+		<Link href={link}>
+			<button
+				type="button"
+				className="rounded-xl mt-12 pl-8 pr-8 pt-4 pb-4 bg-white text-black cursor-pointer
+        font-bold border border-gray-800 hover:scale-110 duration-300 ease-in-out"
+			>
+				Cliquez ici
+			</button>
 		</Link>
 	</div>
 );
