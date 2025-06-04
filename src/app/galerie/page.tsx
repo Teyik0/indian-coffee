@@ -24,7 +24,11 @@ export const metadata: Metadata = {
 	},
 };
 
-const photoEvent = [
+export type Photo = {
+	img: string;
+};
+
+const photoEvent: Photo[] = [
 	{ img: "/gallerie/evenement/1.webp" },
 	{ img: "/gallerie/evenement/2.webp" },
 	{ img: "/gallerie/evenement/3.webp" },
@@ -34,7 +38,7 @@ const photoEvent = [
 	{ img: "/gallerie/evenement/7.webp" },
 ];
 
-const photoDessert = [
+const photoDessert: Photo[] = [
 	{ img: "/gallerie/dessert/1.webp" },
 	{ img: "/gallerie/dessert/2.webp" },
 	{ img: "/gallerie/dessert/3.webp" },
@@ -45,7 +49,7 @@ const photoDessert = [
 	{ img: "/gallerie/dessert/8.webp" },
 ];
 
-const photoPlat = [
+const photoPlat: Photo[] = [
 	{ img: "/gallerie/plats/1.webp" },
 	{ img: "/gallerie/plats/2.webp" },
 	{ img: "/gallerie/plats/3.webp" },
@@ -58,13 +62,13 @@ const photoPlat = [
 	{ img: "/gallerie/plats/10.webp" },
 ];
 
-const photoSpe = [
+const photoSpe: Photo[] = [
 	{ img: "/gallerie/specialite/1.webp" },
 	{ img: "/gallerie/specialite/2.webp" },
 	{ img: "/gallerie/specialite/3.webp" },
 ];
 
-const photoEntry = [
+const photoEntry: Photo[] = [
 	{ img: "/gallerie/entree/1.webp" },
 	{ img: "/gallerie/entree/2.webp" },
 	{ img: "/gallerie/entree/3.webp" },
@@ -78,8 +82,6 @@ const photoEntry = [
 	{ img: "/gallerie/entree/11.webp" },
 ];
 
-const photoVege = [{ img: "/gallerie/vege/1.webp" }];
-
 const page = () => {
 	return (
 		<div>
@@ -87,11 +89,11 @@ const page = () => {
 				<h1 className="font-caveat text-7xl text-white font-bold">Galerie</h1>
 			</section>
 
-			<Carroussel title="Entrées" photo={photoEntry} />
-			<Carroussel title="Plats" photo={photoPlat} />
-			<Carroussel title="Spécialités" photo={photoSpe} />
-			<Carroussel title="Desserts" photo={photoDessert} />
-			<Carroussel title="évènements" photo={photoEvent} />
+			<Carroussel title="Entrées" photos={photoEntry} />
+			<Carroussel title="Plats" photos={photoPlat} />
+			<Carroussel title="Spécialités" photos={photoSpe} />
+			<Carroussel title="Desserts" photos={photoDessert} />
+			<Carroussel title="évènements" photos={photoEvent} />
 
 			<section className="sm:px-8 px-4 xl:px-24x">
 				<h5 className="text-lg italic text-gray-200 text-left pb-12">

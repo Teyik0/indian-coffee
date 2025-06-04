@@ -95,7 +95,7 @@ export const ContactForm = () => {
 						type="text"
 						name="firstname"
 						value={form.prenom}
-						onChange={(e: any) => handleChange(e, "prenom")}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "prenom")}
 						className={styleInput}
 					/>
 				</div>
@@ -107,7 +107,7 @@ export const ContactForm = () => {
 						type="text"
 						name="name"
 						value={form.name}
-						onChange={(e: any) => handleChange(e, "name")}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "name")}
 						className={styleInput}
 					/>
 				</div>
@@ -122,7 +122,7 @@ export const ContactForm = () => {
 						type="email"
 						name="firstname"
 						value={form.email}
-						onChange={(e: any) => handleChange(e, "email")}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "email")}
 						className={styleInput}
 					/>
 				</div>
@@ -134,7 +134,7 @@ export const ContactForm = () => {
 						type="text"
 						name="telephone"
 						value={form.phone}
-						onChange={(e: any) => handleChange(e, "phone")}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "phone")}
 						className={styleInput}
 					/>
 				</div>
@@ -147,7 +147,7 @@ export const ContactForm = () => {
 				<textarea
 					name="message"
 					value={form.message}
-					onChange={(e: any) => handleChange(e, "message")}
+					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange(e, "message")}
 					className={`rounded-lg p-2 font-normal text-md text-black
             outline-hidden bg-white border-black border-2 min-h-[150px]`}
 				/>
@@ -156,7 +156,7 @@ export const ContactForm = () => {
 				type="submit"
 				className="p-16 pt-4 pb-4 bg-[#C6AB71] rounded-lg font-bold hover:text-[#C6AB71]
           hover:bg-white duration-500 text-xl mt-8 w-full"
-				onClick={(e: any) => handleSubmit(e)}
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e)}
 			>
 				Envoyer
 			</button>
