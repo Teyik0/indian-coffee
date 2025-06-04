@@ -25,9 +25,9 @@ export const ContactForm = () => {
 		});
 	};
 
-	const styleLabel = `font-semibold text-lg text-white`;
-	const styleInput = `rounded-lg p-2 font-normal text-md text-black
-  outline-hidden bg-white border-black border-2`;
+	const styleLabel = "font-semibold text-lg text-white";
+	const styleInput =
+		"rounded-lg p-2 font-normal text-md text-black outline-hidden bg-white border-black border-2";
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -50,16 +50,16 @@ export const ContactForm = () => {
 
 		emailjs
 			.send(
-				process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-				process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+				process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID as string,
+				process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID as string,
 				{
-					from_name: form.prenom + " " + form.name,
+					from_name: `${form.prenom} ${form.name}`,
 					to_name: "Indian Coffee",
 					from_email: form.email,
 					to_email: "connectinnov@gmail.com",
 					message: `${form.message}`,
 				},
-				process.env.NEXT_PUBLIC_EMAILJS_TOKEN!,
+				process.env.NEXT_PUBLIC_EMAILJS_TOKEN as string,
 			)
 			.then(() => {
 				toast.success(
@@ -95,7 +95,7 @@ export const ContactForm = () => {
 						type="text"
 						name="firstname"
 						value={form.prenom}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "prenom")}
+						onChange={(e: any) => handleChange(e, "prenom")}
 						className={styleInput}
 					/>
 				</div>
@@ -107,7 +107,7 @@ export const ContactForm = () => {
 						type="text"
 						name="name"
 						value={form.name}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "name")}
+						onChange={(e: any) => handleChange(e, "name")}
 						className={styleInput}
 					/>
 				</div>
@@ -122,7 +122,7 @@ export const ContactForm = () => {
 						type="email"
 						name="firstname"
 						value={form.email}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "email")}
+						onChange={(e: any) => handleChange(e, "email")}
 						className={styleInput}
 					/>
 				</div>
@@ -134,7 +134,7 @@ export const ContactForm = () => {
 						type="text"
 						name="telephone"
 						value={form.phone}
-						onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, "phone")}
+						onChange={(e: any) => handleChange(e, "phone")}
 						className={styleInput}
 					/>
 				</div>
@@ -147,7 +147,7 @@ export const ContactForm = () => {
 				<textarea
 					name="message"
 					value={form.message}
-					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange(e, "message")}
+					onChange={(e: any) => handleChange(e, "message")}
 					className={`rounded-lg p-2 font-normal text-md text-black
             outline-hidden bg-white border-black border-2 min-h-[150px]`}
 				/>
@@ -156,7 +156,7 @@ export const ContactForm = () => {
 				type="submit"
 				className="p-16 pt-4 pb-4 bg-[#C6AB71] rounded-lg font-bold hover:text-[#C6AB71]
           hover:bg-white duration-500 text-xl mt-8 w-full"
-          onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e)}
+				onClick={(e: any) => handleSubmit(e)}
 			>
 				Envoyer
 			</button>
