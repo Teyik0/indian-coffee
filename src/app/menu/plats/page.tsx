@@ -67,7 +67,7 @@ const page = () => {
 						details="SAUCE PARFUMÉE D'ÉPICES TRADITIONNELLES AU GOÛT ENVOUTANT D'INDE SERVIE SANS ACCOMPAGNEMENT"
 						price=""
 					/>
-					<SousPlat title="POULET" price="11,00€" details="" />
+					<SousPlat title="POULET" price="12,00€" details="" />
 					<SousPlat title="AGNEAU" price="13,00€" details="" />
 					<SousPlat title="CREVETTES" price="13,00€" details="" />
 					<SousPlat title="GAMBAS" price="15,00€" details="" />
