@@ -79,12 +79,12 @@ const page = () => {
 				<Plat title="CHICKEN 65" details="POULET FRIT ET épicé" price="9,00€" />
 				<Plat
 					title="CHILI CHICKEN"
-					details="POULET FRIT ET ÉPICÉ, SAUCE CHILI"
-					price="9,90€"
+					details="POULET FRIT POIVRONS ÉPICÉ, SAUCE CHILI"
+					price="11.90"
 				/>
 				<Plat
 					title="CHILI CREVETTES"
-					details="CREVETTES ÉPICÉES, SAUCE CHILI"
+					details="CREVETTES POIVRONS ÉPICÉES, SAUCE CHILI"
 					price="14,90€"
 				/>
 				<Plat
@@ -108,7 +108,7 @@ const page = () => {
 					<SousPlat title="RIZ BASMATI NATURE" details="" price="3,50€" />
 					<SousPlat title="RIZ SUPREME" details="" price="4,50€" />
 					<SousPlat title="RIZ COCO" details="" price="5,50€" />
-					<SousPlat title="FRITES MAISON" details="" price="4,50€" />
+					<SousPlat title="FRITES " details="" price="4,50€" />
 				</div>
 			</div>
 		</section>
