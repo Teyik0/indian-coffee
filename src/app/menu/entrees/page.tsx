@@ -58,17 +58,17 @@ const page = () => {
 				<Plat
 					title="SAMOSSA VIANDE - 2P"
 					details="CHAUSSON DE VIANDE POULET OU BOEUF, PETITS POIS ET POMMES DE TERRE"
-					price="4,50€"
+					price="5€"
 				/>
 				<Plat
 					title="SAMOSSA LÉGUMES - 2P"
 					details="CHAUSSON DE LÉGUMES ET POMME DE TERRE"
-					price="4,50€"
+					price="5€"
 				/>
 				<Plat
 					title="ROLLS VIANDE - 2P"
 					details="ROULEAUX PANÉS DE VIANDE  ET POMME DE TERRE"
-					price="4,50€"
+					price="5€"
 				/>
 
 				<div className="mb-2">
@@ -79,15 +79,15 @@ const page = () => {
 					/>
 					<SousPlat
 						title="BADJI AUX AUBERGINES - 3P"
-						price="4,00€"
+						price="5€"
 						details=""
 					/>
 					<SousPlat
 						title="BADJI AUX POMMES DE TERRE"
-						price="4,00€"
+						price="5€"
 						details=""
 					/>
-					<SousPlat title="BADJI AUX OIGNONS - 3P" price="4,00€" details="" />
+					<SousPlat title="BADJI AUX OIGNONS - 3P" price="5€" details="" />
 					<SousPlat title="BADJI AUX CREVETTES - 3P" price="7,50€" details="" />
 					<SousPlat
 						title="ASSORTISSEMENTS POUR 2 PERSONNES"
