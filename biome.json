@@ -1,0 +1,188 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["**", "!.furin", "!public", "!src/db/migrations"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": "error",
+        "useHookAtTopLevel": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    },
+    "globals": ["Bun"]
+  },
+  "overrides": [
+    {
+      "includes": ["src/{pages,admin,components}/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@/db": "Les pages et composants passent par un module API, jamais directement par la base."
+                },
+                "patterns": [
+                  {
+                    "group": ["@/db/**"],
+                    "message": "Les pages et composants passent par un module API, jamais directement par la base."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/{pages,admin,components}/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@/db": "Les pages et composants passent par un module API, jamais directement par la base.",
+                  "drizzle-orm": "Utilisez l’adaptateur @/api/lib/db.",
+                  "resend": "Utilisez l’adaptateur @/api/lib/resend.",
+                  "uploadthing": "Utilisez l’adaptateur @/api/lib/uploadthing."
+                },
+                "patterns": [
+                  {
+                    "group": ["@/db/**"],
+                    "message": "Les pages et composants passent par un module API, jamais directement par la base."
+                  },
+                  {
+                    "group": ["drizzle-orm/**", "resend/**", "uploadthing/**"],
+                    "message": "Les intégrations externes restent derrière src/api/lib."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/api/modules/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "drizzle-orm": "Utilisez l’adaptateur @/api/lib/db.",
+                  "resend": "Utilisez l’adaptateur @/api/lib/resend.",
+                  "uploadthing": "Utilisez l’adaptateur @/api/lib/uploadthing."
+                },
+                "patterns": [
+                  {
+                    "group": ["drizzle-orm/**", "resend/**", "uploadthing/**"],
+                    "message": "Les intégrations externes restent derrière src/api/lib."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/pages/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@/components/admin": "Le plugin public ne doit pas importer l’administration.",
+                  "@/db": "Le plugin public passe par un module API pour accéder aux données.",
+                  "drizzle-orm": "Utilisez l’adaptateur @/api/lib/db.",
+                  "resend": "Utilisez l’adaptateur @/api/lib/resend.",
+                  "uploadthing": "Utilisez l’adaptateur @/api/lib/uploadthing."
+                },
+                "patterns": [
+                  {
+                    "group": ["@/components/admin/**"],
+                    "message": "Le plugin public ne doit pas importer l’administration."
+                  },
+                  {
+                    "group": ["@/db/**", "drizzle-orm/**", "resend/**", "uploadthing/**"],
+                    "message": "Le plugin public passe par les modules API et leurs adaptateurs."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/admin/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@/components/public": "Le plugin admin ne doit pas importer le site public.",
+                  "@/db": "Le plugin admin passe par un module API pour accéder aux données.",
+                  "drizzle-orm": "Utilisez l’adaptateur @/api/lib/db.",
+                  "resend": "Utilisez l’adaptateur @/api/lib/resend.",
+                  "uploadthing": "Utilisez l’adaptateur @/api/lib/uploadthing."
+                },
+                "patterns": [
+                  {
+                    "group": ["@/components/public/**"],
+                    "message": "Le plugin admin ne doit pas importer le site public."
+                  },
+                  {
+                    "group": ["@/db/**", "drizzle-orm/**", "resend/**", "uploadthing/**"],
+                    "message": "Le plugin admin passe par les modules API et leurs adaptateurs."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

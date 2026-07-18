@@ -8,10 +8,6 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
 
@@ -26,11 +22,13 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-.env*.local
+.env
+.env.local
 
 # vercel
 .vercel
 
-# typescript
+# generated
 *.tsbuildinfo
-next-env.d.ts
+.furin
+.evlog

@@ -1,0 +1,9 @@
+@import "./theme.css";
+
+body {
+  background: oklch(0.95 0.018 82);
+}
+
+.admin-shell {
+  isolation: isolate;
+}
