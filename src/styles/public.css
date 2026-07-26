@@ -2,14 +2,23 @@
 
 body {
   background-image:
-    radial-gradient(circle at 12% 8%, oklch(0.86 0.09 79 / 24%), transparent 26rem),
+    radial-gradient(
+      circle at 12% 8%,
+      oklch(0.86 0.09 79 / 24%),
+      transparent 26rem
+    ),
     linear-gradient(oklch(0.974 0.018 83 / 96%), oklch(0.955 0.025 78 / 96%)),
     url("../../public/background.webp");
   background-attachment: fixed;
 }
 
 .editorial-rule {
-  background: linear-gradient(90deg, var(--tamarind), var(--saffron), transparent);
+  background: linear-gradient(
+    90deg,
+    var(--tamarind),
+    var(--saffron),
+    transparent
+  );
   height: 1px;
 }
 

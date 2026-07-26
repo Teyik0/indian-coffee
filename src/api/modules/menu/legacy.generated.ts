@@ -6,7 +6,8 @@ export const legacyMenuEntries = [
     category: "starters",
     kind: "item",
     name: "SAMOSSA VIANDE - 2P",
-    description: "CHAUSSON DE VIANDE POULET OU BOEUF, PETITS POIS ET POMMES DE TERRE",
+    description:
+      "CHAUSSON DE VIANDE POULET OU BOEUF, PETITS POIS ET POMMES DE TERRE",
     priceCents: 500,
     sourceOrder: 0,
   },
@@ -182,7 +183,8 @@ export const legacyMenuEntries = [
     category: "starters",
     kind: "variant",
     name: "SALADE POULET TIKKA",
-    description: "SALADE, OIGNONS, TOMATES, MAÏS OLIVES, POULET TIKKA AVEC NAAN NATURE",
+    description:
+      "SALADE, OIGNONS, TOMATES, MAÏS OLIVES, POULET TIKKA AVEC NAAN NATURE",
     priceCents: 1300,
     sourceOrder: 22,
   },
@@ -190,7 +192,8 @@ export const legacyMenuEntries = [
     category: "starters",
     kind: "variant",
     name: "SALADE SAUMON TIKKA",
-    description: "SALADE, OIGNONS, TOMATES, MAÏS, OLIVES, SAUMON TIKKA AVEC NAAN NATURE",
+    description:
+      "SALADE, OIGNONS, TOMATES, MAÏS, OLIVES, SAUMON TIKKA AVEC NAAN NATURE",
     priceCents: 1500,
     sourceOrder: 23,
   },
@@ -198,7 +201,8 @@ export const legacyMenuEntries = [
     category: "starters",
     kind: "variant",
     name: "SALADE VÉGÉTARIENNE",
-    description: "SALADE, CONCOMBRES, MAÎS, OLIVES, POMMES DE TERRE AVEC NAAN NATURE",
+    description:
+      "SALADE, CONCOMBRES, MAÎS, OLIVES, POMMES DE TERRE AVEC NAAN NATURE",
     priceCents: 1200,
     sourceOrder: 24,
   },
@@ -547,7 +551,8 @@ export const legacyMenuEntries = [
     category: "main-courses",
     kind: "item",
     name: "BIRYANI",
-    description: "MÉLANGE DE RIZ SAFRANÉ, DE TOMATES, D'OIGNONS AUX GINGEMBRE ET ÉPICES INDIENNES",
+    description:
+      "MÉLANGE DE RIZ SAFRANÉ, DE TOMATES, D'OIGNONS AUX GINGEMBRE ET ÉPICES INDIENNES",
     priceCents: null,
     sourceOrder: 23,
   },
@@ -707,7 +712,8 @@ export const legacyMenuEntries = [
     category: "specialties",
     kind: "item",
     name: "DORADE ROYALE ENTIÈRE",
-    description: "POISSON MARINÉ AUX ÉPICES, GRILLÉ AU FOUR TANDOOR SERVI AVEC DU RIZ",
+    description:
+      "POISSON MARINÉ AUX ÉPICES, GRILLÉ AU FOUR TANDOOR SERVI AVEC DU RIZ",
     priceCents: 2190,
     sourceOrder: 8,
   },
@@ -835,7 +841,8 @@ export const legacyMenuEntries = [
     category: "desserts",
     kind: "item",
     name: "FALOODA",
-    description: "LAIT, SIROP DE ROSE, GRAINES DE BASILIC, MORCEAUX DE GÉLATINE, BOULE DE GLACE",
+    description:
+      "LAIT, SIROP DE ROSE, GRAINES DE BASILIC, MORCEAUX DE GÉLATINE, BOULE DE GLACE",
     priceCents: 700,
     sourceOrder: 4,
   },
@@ -1180,7 +1187,8 @@ export const legacyMenuEntries = [
     category: "drinks",
     kind: "variant",
     name: "Mojito",
-    description: "(Rhum, citron, menthe, eau pétillante, sirop de sucre de canne, jus de pomme)",
+    description:
+      "(Rhum, citron, menthe, eau pétillante, sirop de sucre de canne, jus de pomme)",
     priceCents: 890,
     sourceOrder: 22,
   },

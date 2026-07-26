@@ -8,7 +8,9 @@ export default function AdminError({ error, reset }: ErrorProps) {
       <p className="font-semibold uppercase tracking-[0.2em] text-destructive text-xs">
         Incident {error.digest}
       </p>
-      <h1 className="mt-4 font-display text-5xl">La donnée n’a pas pu être chargée.</h1>
+      <h1 className="mt-4 font-display text-5xl">
+        La donnée n’a pas pu être chargée.
+      </h1>
       <p className="mt-4 max-w-lg text-muted-foreground">{error.message}</p>
       <Button className="mt-7" onClick={reset}>
         <RotateCcwIcon data-icon="inline-start" />

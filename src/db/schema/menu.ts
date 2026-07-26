@@ -10,7 +10,11 @@ import {
 } from "drizzle-orm/pg-core";
 import { mediaAssets } from "./media";
 
-export const menuItemStatus = pgEnum("menu_item_status", ["AVAILABLE", "UNAVAILABLE", "HIDDEN"]);
+export const menuItemStatus = pgEnum("menu_item_status", [
+  "AVAILABLE",
+  "UNAVAILABLE",
+  "HIDDEN",
+]);
 export const spiceLevel = pgEnum("spice_level", ["MILD", "MEDIUM", "HOT"]);
 
 export const menuCategories = pgTable("menu_categories", {
@@ -18,12 +22,18 @@ export const menuCategories = pgTable("menu_categories", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description").default("").notNull(),
-  mediaId: uuid("media_id").references(() => mediaAssets.id, { onDelete: "set null" }),
+  mediaId: uuid("media_id").references(() => mediaAssets.id, {
+    onDelete: "set null",
+  }),
   sortOrder: integer("sort_order").default(0).notNull(),
   isVisible: boolean("is_visible").default(true).notNull(),
   version: integer("version").default(1).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const menuSections = pgTable(
@@ -39,7 +49,9 @@ export const menuSections = pgTable(
     isVisible: boolean("is_visible").default(true).notNull(),
     version: integer("version").default(1).notNull(),
   },
-  (table) => [index("menu_sections_category_idx").on(table.categoryId, table.sortOrder)],
+  (table) => [
+    index("menu_sections_category_idx").on(table.categoryId, table.sortOrder),
+  ],
 );
 
 export const menuItems = pgTable(
@@ -51,17 +63,25 @@ export const menuItems = pgTable(
       .references(() => menuSections.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description").default("").notNull(),
-    mediaId: uuid("media_id").references(() => mediaAssets.id, { onDelete: "set null" }),
+    mediaId: uuid("media_id").references(() => mediaAssets.id, {
+      onDelete: "set null",
+    }),
     status: menuItemStatus("status").default("AVAILABLE").notNull(),
     dietaryFlags: text("dietary_flags").array().default([]).notNull(),
     spiceLevel: spiceLevel("spice_level"),
     featured: boolean("featured").default(false).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     version: integer("version").default(1).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [index("menu_items_section_idx").on(table.sectionId, table.sortOrder)],
+  (table) => [
+    index("menu_items_section_idx").on(table.sectionId, table.sortOrder),
+  ],
 );
 
 export const menuItemVariants = pgTable(
@@ -76,7 +96,9 @@ export const menuItemVariants = pgTable(
     priceCents: integer("price_cents").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
   },
-  (table) => [index("menu_variants_item_idx").on(table.itemId, table.sortOrder)],
+  (table) => [
+    index("menu_variants_item_idx").on(table.itemId, table.sortOrder),
+  ],
 );
 
 export const menuChoiceGroups = pgTable("menu_choice_groups", {

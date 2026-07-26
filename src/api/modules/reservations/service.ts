@@ -1,7 +1,11 @@
 import { and, asc, db, eq, sql } from "@/api/lib/db";
 import { env } from "@/api/lib/env";
 import { reservations } from "@/db/schema/reservations";
-import { mutationRequests, outboxJobs, requestRateLimits } from "@/db/schema/system";
+import {
+  mutationRequests,
+  outboxJobs,
+  requestRateLimits,
+} from "@/db/schema/system";
 import { DomainError, sha256 } from "../shared";
 import type {
   ReservationCreateInput,
@@ -29,10 +33,20 @@ function parisDateTimeToUtc(day: string, time: string) {
   const [year, month, date] = day.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
   if ([year, month, date, hour, minute].some((value) => Number.isNaN(value))) {
-    throw new DomainError("INVALID_DATE", "La date de réservation est invalide.", 422);
+    throw new DomainError(
+      "INVALID_DATE",
+      "La date de réservation est invalide.",
+      422,
+    );
   }
 
-  const desired = Date.UTC(year ?? 0, (month ?? 1) - 1, date ?? 1, hour ?? 0, minute ?? 0);
+  const desired = Date.UTC(
+    year ?? 0,
+    (month ?? 1) - 1,
+    date ?? 1,
+    hour ?? 0,
+    minute ?? 0,
+  );
   let candidate = desired;
   for (let iteration = 0; iteration < 2; iteration += 1) {
     const parts = parisParts(new Date(candidate));
@@ -50,7 +64,10 @@ function parisDateTimeToUtc(day: string, time: string) {
 
 function validateRequestedSlot(input: ReservationCreateInput) {
   const now = new Date();
-  const requestedAt = parisDateTimeToUtc(input.requestedDate, input.requestedTime);
+  const requestedAt = parisDateTimeToUtc(
+    input.requestedDate,
+    input.requestedTime,
+  );
   const latest = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
   if (requestedAt <= now || requestedAt > latest) {
     throw new DomainError(
@@ -63,7 +80,8 @@ function validateRequestedSlot(input: ReservationCreateInput) {
 
   const weekday = new Date(`${input.requestedDate}T12:00:00Z`).getUTCDay();
   const minutes =
-    Number(input.requestedTime.slice(0, 2)) * 60 + Number(input.requestedTime.slice(3));
+    Number(input.requestedTime.slice(0, 2)) * 60 +
+    Number(input.requestedTime.slice(3));
   const opening = weekday === 0 ? 12 * 60 : 11 * 60;
   const closing = weekday === 5 || weekday === 6 ? 23 * 60 : 22 * 60 + 30;
   if (minutes < opening || minutes > closing - 30) {
@@ -78,7 +96,11 @@ function validateRequestedSlot(input: ReservationCreateInput) {
 }
 
 function createReference(requestedDate: string) {
-  const suffix = crypto.randomUUID().replaceAll("-", "").slice(0, 4).toUpperCase();
+  const suffix = crypto
+    .randomUUID()
+    .replaceAll("-", "")
+    .slice(0, 4)
+    .toUpperCase();
   return `IC-${requestedDate.replaceAll("-", "")}-${suffix}`;
 }
 
@@ -111,7 +133,11 @@ export const reservationService = {
   ): Promise<ReservationPublicResult> {
     if (input.website) {
       return {
-        reservation: { id: crypto.randomUUID(), reference: "IC-REÇUE", status: "PENDING" },
+        reservation: {
+          id: crypto.randomUUID(),
+          reference: "IC-REÇUE",
+          status: "PENDING",
+        },
         message: "Votre demande a bien été transmise.",
       };
     }
@@ -121,7 +147,8 @@ export const reservationService = {
     const id = crypto.randomUUID();
     const result: ReservationPublicResult = {
       reservation: { id, reference, status: "PENDING" },
-      message: "Votre demande a bien été transmise. Notre équipe va vous répondre rapidement.",
+      message:
+        "Votre demande a bien été transmise. Notre équipe va vous répondre rapidement.",
     };
 
     await enforceRateLimit(context.ip, input.email);
@@ -143,7 +170,11 @@ export const reservationService = {
       if (existing.state === "COMPLETED" && existing.response) {
         return existing.response as ReservationPublicResult;
       }
-      throw new DomainError("MUTATION_IN_PROGRESS", "Cette demande est déjà en cours.", 409);
+      throw new DomainError(
+        "MUTATION_IN_PROGRESS",
+        "Cette demande est déjà en cours.",
+        409,
+      );
     }
 
     await db.insert(mutationRequests).values({
@@ -204,7 +235,10 @@ export const reservationService = {
   },
 
   async list() {
-    return db.select().from(reservations).orderBy(asc(reservations.requestedAt));
+    return db
+      .select()
+      .from(reservations)
+      .orderBy(asc(reservations.requestedAt));
   },
 
   async updateStatus(id: string, input: ReservationStatusUpdate) {
@@ -217,11 +251,17 @@ export const reservationService = {
           version: input.version + 1,
           updatedAt: new Date(),
         })
-        .where(and(eq(reservations.id, id), eq(reservations.version, input.version)))
+        .where(
+          and(eq(reservations.id, id), eq(reservations.version, input.version)),
+        )
         .returning();
       const reservation = rows[0];
       if (!reservation) {
-        throw new DomainError("VERSION_CONFLICT", "La réservation a été modifiée ailleurs.", 409);
+        throw new DomainError(
+          "VERSION_CONFLICT",
+          "La réservation a été modifiée ailleurs.",
+          409,
+        );
       }
       await tx.insert(outboxJobs).values({
         kind: "EMAIL_SEND",

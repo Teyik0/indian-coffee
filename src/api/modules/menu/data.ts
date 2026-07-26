@@ -118,7 +118,9 @@ function inferDietaryFlags(category: string, name: string) {
   return [];
 }
 
-function buildCategory(metadata: (typeof categoryMetadata)[number]): MenuCategoryView {
+function buildCategory(
+  metadata: (typeof categoryMetadata)[number],
+): MenuCategoryView {
   const items: MenuItemView[] = [];
   let current: MenuItemView | undefined;
 

@@ -1,7 +1,17 @@
 import { and, asc, db, eq, inArray } from "@/api/lib/db";
-import { menuCategories, menuItems, menuItemVariants, menuSections } from "@/db/schema/menu";
+import {
+  menuCategories,
+  menuItems,
+  menuItemVariants,
+  menuSections,
+} from "@/db/schema/menu";
 import { DomainError } from "../shared";
-import type { MenuCategoryView, MenuItemView, MenuQuery, UpdateMenuStatus } from "./model";
+import type {
+  MenuCategoryView,
+  MenuItemView,
+  MenuQuery,
+  UpdateMenuStatus,
+} from "./model";
 
 function filterMenu(categories: MenuCategoryView[], query: MenuQuery) {
   const search = query.search?.trim().toLocaleLowerCase("fr-FR");
@@ -15,7 +25,9 @@ function filterMenu(categories: MenuCategoryView[], query: MenuQuery) {
           items: section.items.filter((item) => {
             if (item.status === "HIDDEN") return false;
             if (!search) return true;
-            return `${item.name} ${item.description}`.toLocaleLowerCase("fr-FR").includes(search);
+            return `${item.name} ${item.description}`
+              .toLocaleLowerCase("fr-FR")
+              .includes(search);
           }),
         }))
         .filter((section) => section.items.length > 0),
@@ -93,7 +105,9 @@ export const menuService = {
   async getFeatured() {
     const categories = await this.getPublic({});
     return categories
-      .flatMap((category) => category.sections.flatMap((section) => section.items))
+      .flatMap((category) =>
+        category.sections.flatMap((section) => section.items),
+      )
       .filter((item) => item.featured)
       .slice(0, 3);
   },
@@ -122,6 +136,9 @@ export const menuService = {
 
   async deleteItems(ids: string[]) {
     if (ids.length === 0) return [];
-    return db.delete(menuItems).where(inArray(menuItems.id, ids)).returning({ id: menuItems.id });
+    return db
+      .delete(menuItems)
+      .where(inArray(menuItems.id, ids))
+      .returning({ id: menuItems.id });
   },
 };

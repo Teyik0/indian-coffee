@@ -6,16 +6,19 @@ import type { SiteContent, SiteSettingsInput } from "./model";
 export const initialContent: SiteContent = {
   id: "default",
   restaurantName: "Indian Coffee",
-  tagline: "Une cuisine du Sud de l’Inde et du Sri Lanka, sincère, généreuse et préparée maison.",
+  tagline:
+    "Une cuisine du Sud de l’Inde et du Sri Lanka, sincère, généreuse et préparée maison.",
   phone: "+33 (0)1 60 63 54 97",
   email: "indiancoffee77@gmail.com",
   addressLine: "8 Impasse de l’Orée du Bois",
   postalCode: "77176",
   city: "Savigny-le-Temple",
-  mapUrl: "https://www.google.com/maps/search/?api=1&query=Indian+Coffee+Savigny-le-Temple",
+  mapUrl:
+    "https://www.google.com/maps/search/?api=1&query=Indian+Coffee+Savigny-le-Temple",
   instagramUrl: "",
   facebookUrl: "",
-  reservationNotice: "Votre réservation sera confirmée personnellement par notre équipe.",
+  reservationNotice:
+    "Votre réservation sera confirmée personnellement par notre équipe.",
   version: 1,
   hero: {
     eyebrow: "Savigny-le-Temple · Depuis 2012",
@@ -37,9 +40,20 @@ export const initialContent: SiteContent = {
 export const contentService = {
   async get(): Promise<SiteContent> {
     const [settingsRows, homeRows, hoursRows] = await Promise.all([
-      db.select().from(siteSettings).where(eq(siteSettings.id, "default")).limit(1),
-      db.select().from(homeContent).where(eq(homeContent.id, "default")).limit(1),
-      db.select().from(openingHours).orderBy(openingHours.dayOfWeek, openingHours.sortOrder),
+      db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.id, "default"))
+        .limit(1),
+      db
+        .select()
+        .from(homeContent)
+        .where(eq(homeContent.id, "default"))
+        .limit(1),
+      db
+        .select()
+        .from(openingHours)
+        .orderBy(openingHours.dayOfWeek, openingHours.sortOrder),
     ]);
     const settings = settingsRows[0];
     const home = homeRows[0];
@@ -53,7 +67,11 @@ export const contentService = {
       ...settings,
       instagramUrl: settings.instagramUrl ?? "",
       facebookUrl: settings.facebookUrl ?? "",
-      hero: { eyebrow: home.eyebrow, title: home.heroTitle, intro: home.heroIntro },
+      hero: {
+        eyebrow: home.eyebrow,
+        title: home.heroTitle,
+        intro: home.heroIntro,
+      },
       story: { title: home.storyTitle, body: home.storyBody },
       hours: hoursRows.map((slot) => ({
         day: slot.label ?? String(slot.dayOfWeek),
@@ -72,10 +90,19 @@ export const contentService = {
         version: input.version + 1,
         updatedAt: new Date(),
       })
-      .where(and(eq(siteSettings.id, "default"), eq(siteSettings.version, input.version)))
+      .where(
+        and(
+          eq(siteSettings.id, "default"),
+          eq(siteSettings.version, input.version),
+        ),
+      )
       .returning();
     if (!rows[0]) {
-      throw new DomainError("VERSION_CONFLICT", "Le contenu a été modifié ailleurs.", 409);
+      throw new DomainError(
+        "VERSION_CONFLICT",
+        "Le contenu a été modifié ailleurs.",
+        409,
+      );
     }
     return rows[0];
   },

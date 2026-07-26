@@ -10,8 +10,12 @@ export const SiteSettingsSchema = v.object({
   postalCode: v.pipe(v.string(), v.regex(/^\d{5}$/)),
   city: v.pipe(v.string(), v.minLength(2), v.maxLength(80)),
   mapUrl: v.pipe(v.string(), v.url()),
-  instagramUrl: v.optional(v.union([v.pipe(v.string(), v.url()), v.literal("")])),
-  facebookUrl: v.optional(v.union([v.pipe(v.string(), v.url()), v.literal("")])),
+  instagramUrl: v.optional(
+    v.union([v.pipe(v.string(), v.url()), v.literal("")]),
+  ),
+  facebookUrl: v.optional(
+    v.union([v.pipe(v.string(), v.url()), v.literal("")]),
+  ),
   reservationNotice: v.pipe(v.string(), v.minLength(10), v.maxLength(300)),
   version: VersionSchema,
 });

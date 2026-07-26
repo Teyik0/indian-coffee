@@ -13,3 +13,11 @@ declare module "@teyik0/furin/link" {
     "/privacy": { search?: never; searchInput?: never };
   }
 }
+
+declare module "@teyik0/furin" {
+  interface FurinCacheTags {
+    content: 'content';
+    gallery: 'gallery';
+    menu: 'menu';
+  }
+}

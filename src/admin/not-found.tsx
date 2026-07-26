@@ -13,7 +13,11 @@ export default function AdminNotFound({ error }: NotFoundProps) {
       <p className="mt-4 max-w-lg text-muted-foreground">
         {error.message || "Cette section du back-office n’existe pas."}
       </p>
-      <Button className="mt-7" nativeButton={false} render={<AdminLink to="/" />}>
+      <Button
+        className="mt-7"
+        nativeButton={false}
+        render={<AdminLink to="/" />}
+      >
         <LayoutDashboardIcon data-icon="inline-start" />
         Tableau de bord
       </Button>

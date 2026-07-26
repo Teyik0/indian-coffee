@@ -1,7 +1,11 @@
 import * as v from "valibot";
 import { UuidSchema, VersionSchema } from "../shared";
 
-export const MenuStatusSchema = v.picklist(["AVAILABLE", "UNAVAILABLE", "HIDDEN"]);
+export const MenuStatusSchema = v.picklist([
+  "AVAILABLE",
+  "UNAVAILABLE",
+  "HIDDEN",
+]);
 
 export const MenuQuerySchema = v.object({
   category: v.optional(v.string()),

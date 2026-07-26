@@ -1,3 +1,4 @@
+import { useSync } from "@teyik0/furin/client";
 import { CheckIcon, XIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -27,9 +28,16 @@ const reservationDateFormatter = new Intl.DateTimeFormat("fr-FR", {
 
 function formatReservationDate(value: Date | string) {
   const parts = Object.fromEntries(
-    reservationDateFormatter.formatToParts(new Date(value)).map((part) => [part.type, part.value]),
+    reservationDateFormatter
+      .formatToParts(new Date(value))
+      .map((part) => [part.type, part.value]),
   );
   return `${parts.day}/${parts.month}/${parts.year} · ${parts.hour}:${parts.minute}`;
+}
+
+interface ReservationStatusMutation {
+  reservation: ReservationAdminView;
+  status: "CONFIRMED" | "DECLINED";
 }
 
 export function ReservationManager({
@@ -39,24 +47,56 @@ export function ReservationManager({
 }) {
   const [reservationsList, setReservationsList] = useState(initialReservations);
   const [pending, startTransition] = useTransition();
-
-  function changeStatus(reservation: ReservationAdminView, status: "CONFIRMED" | "DECLINED") {
-    startTransition(async () => {
-      const { data, error } = await api.api.admin
-        .reservations({ id: reservation.id })
-        .status.patch({
+  const mutateStatus = useSync(
+    ({ reservation, status }: ReservationStatusMutation, options) =>
+      api.api.admin.reservations({ id: reservation.id }).status.patch(
+        {
           status,
           adminNote: "",
           version: reservation.version,
-        });
+        },
+        options,
+      ),
+    {
+      optimistic: ({ input }) => {
+        setReservationsList((current) =>
+          current.map((item) =>
+            item.id === input.reservation.id
+              ? { ...item, status: input.status }
+              : item,
+          ),
+        );
+        return () =>
+          setReservationsList((current) =>
+            current.map((item) =>
+              item.id === input.reservation.id ? input.reservation : item,
+            ),
+          );
+      },
+    },
+  );
+
+  function changeStatus(
+    reservation: ReservationAdminView,
+    status: "CONFIRMED" | "DECLINED",
+  ) {
+    startTransition(async () => {
+      const { data, error } = await mutateStatus({ reservation, status });
       if (error || !data || !("id" in data)) {
         toast.error("Mise à jour impossible", {
-          description: apiErrorMessage(error, "Rechargez les réservations puis réessayez."),
+          description: apiErrorMessage(
+            error,
+            "Rechargez les réservations puis réessayez.",
+          ),
         });
         return;
       }
-      setReservationsList((current) => current.map((item) => (item.id === data.id ? data : item)));
-      toast.success(status === "CONFIRMED" ? "Réservation confirmée" : "Demande refusée");
+      setReservationsList((current) =>
+        current.map((item) => (item.id === data.id ? data : item)),
+      );
+      toast.success(
+        status === "CONFIRMED" ? "Réservation confirmée" : "Demande refusée",
+      );
     });
   }
 
@@ -77,15 +117,25 @@ export function ReservationManager({
           <TableBody>
             {reservationsList.map((reservation) => (
               <TableRow key={reservation.id}>
-                <TableCell className="font-mono text-xs">{reservation.reference}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  {reservation.reference}
+                </TableCell>
                 <TableCell>
                   <strong>{reservation.fullName}</strong>
-                  <span className="block text-muted-foreground text-xs">{reservation.phone}</span>
+                  <span className="block text-muted-foreground text-xs">
+                    {reservation.phone}
+                  </span>
                 </TableCell>
-                <TableCell>{formatReservationDate(reservation.requestedAt)}</TableCell>
+                <TableCell>
+                  {formatReservationDate(reservation.requestedAt)}
+                </TableCell>
                 <TableCell>{reservation.partySize}</TableCell>
                 <TableCell>
-                  <Badge variant={reservation.status === "PENDING" ? "outline" : "secondary"}>
+                  <Badge
+                    variant={
+                      reservation.status === "PENDING" ? "outline" : "secondary"
+                    }
+                  >
                     {reservation.status}
                   </Badge>
                 </TableCell>

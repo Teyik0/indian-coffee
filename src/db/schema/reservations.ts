@@ -1,4 +1,12 @@
-import { index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const reservationStatus = pgEnum("reservation_status", [
   "PENDING",
@@ -23,8 +31,12 @@ export const reservations = pgTable(
     adminNote: text("admin_note"),
     consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
     version: integer("version").default(1).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     index("reservations_requested_idx").on(table.requestedAt),

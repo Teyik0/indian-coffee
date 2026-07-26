@@ -1,7 +1,9 @@
-import type { AdminSession } from "@/api/plugins/better-auth.plugin";
-import { getSession, isBackOfficeUser } from "@/api/plugins/better-auth.plugin";
+import { getApi, unwrapApiResult } from "@/lib/api-client";
 
-type Redirect = (location: string, status?: 301 | 302 | 303 | 307 | 308) => Response;
+type Redirect = (
+  location: string,
+  status?: 301 | 302 | 303 | 307 | 308,
+) => Response;
 
 export type AdminPermission =
   | "dashboard:read"
@@ -12,28 +14,25 @@ export type AdminPermission =
   | "reservations:write"
   | "users:read";
 
-const editorPermissions: ReadonlySet<AdminPermission> = new Set([
-  "dashboard:read",
-  "menu:write",
-  "gallery:write",
-  "content:write",
-  "hours:write",
-  "reservations:write",
-]);
-
-export function hasAdminPermission(role: string | null | undefined, permission: AdminPermission) {
-  return role === "admin" || (role === "editor" && editorPermissions.has(permission));
+export function hasAdminPermission(
+  role: string | null | undefined,
+  _permission: AdminPermission,
+) {
+  return role === "admin";
 }
 
 export async function requireBackOfficeSession(
   request: Request,
   redirect: Redirect,
-  permission: AdminPermission = "dashboard:read",
-): Promise<NonNullable<AdminSession>> {
-  const current = await getSession(request);
-  if (!current || !isBackOfficeUser(current)) {
-    throw redirect("/login", 302);
+  permission: AdminPermission,
+) {
+  const result = await getApi().api.admin.session.get({
+    headers: request.headers,
+  });
+  if (result.error?.status === 401) {
+    throw redirect("/admin/login", 302);
   }
+  const current = unwrapApiResult(result);
   if (!hasAdminPermission(current.user.role, permission)) {
     throw new Response("Accès refusé.", { status: 403 });
   }

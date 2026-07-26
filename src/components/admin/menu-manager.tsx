@@ -1,11 +1,22 @@
+import { useSync } from "@teyik0/furin/client";
 import { CheckCircle2Icon, CircleOffIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { MenuCategoryView, MenuItemView, MenuStatus } from "@/api/modules/menu/model";
+import type {
+  MenuCategoryView,
+  MenuItemView,
+  MenuStatus,
+} from "@/api/modules/menu/model";
 import { formatPrice } from "@/api/modules/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -20,7 +31,16 @@ function nextStatus(status: MenuStatus): MenuStatus {
   return status === "AVAILABLE" ? "UNAVAILABLE" : "AVAILABLE";
 }
 
-export function MenuManager({ initialCategories }: { initialCategories: MenuCategoryView[] }) {
+interface MenuStatusMutation {
+  item: MenuItemView;
+  status: MenuStatus;
+}
+
+export function MenuManager({
+  initialCategories,
+}: {
+  initialCategories: MenuCategoryView[];
+}) {
   const [categories, setCategories] = useState(initialCategories);
   const [pending, startTransition] = useTransition();
 
@@ -30,24 +50,37 @@ export function MenuManager({ initialCategories }: { initialCategories: MenuCate
         ...category,
         sections: category.sections.map((section) => ({
           ...section,
-          items: section.items.map((item) => (item.id === updated.id ? updated : item)),
+          items: section.items.map((item) =>
+            item.id === updated.id ? updated : item,
+          ),
         })),
       })),
     );
   }
 
+  const mutateStatus = useSync(
+    ({ item, status }: MenuStatusMutation, options) =>
+      api.api.admin.menu
+        .items({ id: item.id })
+        .status.patch({ status, version: item.version }, options),
+    {
+      optimistic: ({ input }) => {
+        replaceItem({ ...input.item, status: input.status });
+        return () => replaceItem(input.item);
+      },
+    },
+  );
+
   function updateStatus(item: MenuItemView) {
     const status = nextStatus(item.status);
     startTransition(async () => {
-      const { data, error } = await api.api.admin.menu
-        .items({ id: item.id })
-        .status.patch(
-          { status, version: item.version },
-          { headers: { "idempotency-key": crypto.randomUUID() } },
-        );
+      const { data, error } = await mutateStatus({ item, status });
       if (error || !data) {
         toast.error("Modification impossible", {
-          description: apiErrorMessage(error, "Réessayez après avoir rechargé la carte."),
+          description: apiErrorMessage(
+            error,
+            "Réessayez après avoir rechargé la carte.",
+          ),
         });
         return;
       }
@@ -57,7 +90,9 @@ export function MenuManager({ initialCategories }: { initialCategories: MenuCate
         version: "version" in data ? data.version : item.version + 1,
       });
       toast.success(
-        status === "AVAILABLE" ? "Plat de nouveau disponible" : "Plat marqué indisponible",
+        status === "AVAILABLE"
+          ? "Plat de nouveau disponible"
+          : "Plat marqué indisponible",
       );
     });
   }
@@ -92,11 +127,21 @@ export function MenuManager({ initialCategories }: { initialCategories: MenuCate
                         </span>
                       </TableCell>
                       <TableCell>
-                        {item.variants[0] ? formatPrice(item.variants[0].priceCents) : "—"}
+                        {item.variants[0]
+                          ? formatPrice(item.variants[0].priceCents)
+                          : "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={item.status === "AVAILABLE" ? "secondary" : "outline"}>
-                          {item.status === "AVAILABLE" ? "Disponible" : "Indisponible"}
+                        <Badge
+                          variant={
+                            item.status === "AVAILABLE"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {item.status === "AVAILABLE"
+                            ? "Disponible"
+                            : "Indisponible"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -111,7 +156,9 @@ export function MenuManager({ initialCategories }: { initialCategories: MenuCate
                           ) : (
                             <CheckCircle2Icon data-icon="inline-start" />
                           )}
-                          {item.status === "AVAILABLE" ? "Indisponible" : "Réactiver"}
+                          {item.status === "AVAILABLE"
+                            ? "Indisponible"
+                            : "Réactiver"}
                         </Button>
                       </TableCell>
                     </TableRow>

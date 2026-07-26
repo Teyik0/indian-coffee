@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 export default function PublicNotFound({ error }: NotFoundProps) {
   return (
     <section className="mx-auto flex min-h-[65vh] max-w-4xl flex-col items-center justify-center px-5 text-center">
-      <p className="font-semibold uppercase tracking-[0.22em] text-primary text-xs">Erreur 404</p>
+      <p className="font-semibold uppercase tracking-[0.22em] text-primary text-xs">
+        Erreur 404
+      </p>
       <h1 className="mt-4 text-balance font-display text-6xl sm:text-8xl">
         Cette table n’existe pas.
       </h1>

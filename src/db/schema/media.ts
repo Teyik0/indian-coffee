@@ -21,5 +21,7 @@ export const mediaAssets = pgTable("media_assets", {
   largeWidth: integer("large_width").notNull(),
   largeHeight: integer("large_height").notNull(),
   largeBytes: integer("large_bytes").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });

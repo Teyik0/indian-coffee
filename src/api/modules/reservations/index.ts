@@ -12,18 +12,25 @@ export const publicReservationRouter = new Elysia({
   prefix: "/api/reservations",
 }).post(
   "/",
-  async ({ body, headers, request, status }) => {
+  async ({ body, headers, request, set, status }) => {
     const origin = headers.origin;
     if (origin && URL.parse(origin)?.origin !== new URL(request.url).origin) {
-      return status(403, { code: "INVALID_ORIGIN", message: "Origine de la requête refusée." });
+      return status(403, {
+        code: "INVALID_ORIGIN",
+        message: "Origine de la requête refusée.",
+      });
     }
     const result = await reservationService.create(body, {
       idempotencyKey: headers["idempotency-key"] ?? crypto.randomUUID(),
       ip: headers["x-forwarded-for"]?.split(",")[0]?.trim() ?? "unknown",
     });
-    return status(201, result);
+    set.status = 201;
+    return result;
   },
-  { body: ReservationCreateSchema },
+  {
+    body: ReservationCreateSchema,
+    sync: { invalidate: { tags: ["reservations"] } },
+  },
 );
 
 export const adminReservationRouter = new Elysia({
@@ -31,9 +38,14 @@ export const adminReservationRouter = new Elysia({
   prefix: "/api/admin/reservations",
 })
   .use(betterAuthPlugin)
-  .get("/", () => reservationService.list(), { backOffice: true })
-  .patch("/:id/status", ({ params, body }) => reservationService.updateStatus(params.id, body), {
-    backOffice: true,
-    params: ReservationParamsSchema,
-    body: ReservationStatusUpdateSchema,
-  });
+  .get("/", () => reservationService.list(), { onlyAdmin: true })
+  .patch(
+    "/:id/status",
+    ({ params, body }) => reservationService.updateStatus(params.id, body),
+    {
+      onlyAdmin: true,
+      params: ReservationParamsSchema,
+      body: ReservationStatusUpdateSchema,
+      sync: { invalidate: { tags: ["reservations"] } },
+    },
+  );

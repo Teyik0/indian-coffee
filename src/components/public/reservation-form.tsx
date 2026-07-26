@@ -1,19 +1,39 @@
-import { Form, Field as FormischField, type SubmitHandler, useForm } from "@formisch/react";
+import {
+  Form,
+  Field as FormischField,
+  type SubmitHandler,
+  useForm,
+} from "@formisch/react";
+import { useSync } from "@teyik0/furin/client";
 import { CheckIcon, SendIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { InferOutput } from "valibot";
 import { ReservationCreateSchema } from "@/api/modules/reservations/model";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupTextarea } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { api, apiErrorMessage } from "@/lib/api-client";
 
+type ReservationInput = InferOutput<typeof ReservationCreateSchema>;
+
 export function ReservationForm() {
   const [pending, setPending] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const createReservation = useSync((input: ReservationInput, options) =>
+    api.api.reservations.post(input, {
+      headers: { ...options.headers },
+    }),
+  );
   const form = useForm({
     schema: ReservationCreateSchema,
     initialInput: {
@@ -32,22 +52,25 @@ export function ReservationForm() {
     revalidate: "input",
   });
 
-  const handleSubmit: SubmitHandler<typeof ReservationCreateSchema> = async (output) => {
+  const handleSubmit: SubmitHandler<typeof ReservationCreateSchema> = async (
+    output,
+  ) => {
     setPending(true);
     try {
-      const { data, error } = await api.api.reservations.post(output, {
-        headers: {
-          "idempotency-key": crypto.randomUUID(),
-        },
-      });
+      const { data, error } = await createReservation(output);
       if (error || !data || !("reservation" in data)) {
-        throw new Error(apiErrorMessage(error, "La demande n’a pas pu être envoyée."));
+        throw new Error(
+          apiErrorMessage(error, "La demande n’a pas pu être envoyée."),
+        );
       }
       setReference(data.reservation.reference);
       toast.success("Demande envoyée", { description: data.message });
     } catch (error) {
       toast.error("Envoi impossible", {
-        description: error instanceof Error ? error.message : "Réessayez dans quelques instants.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Réessayez dans quelques instants.",
       });
     } finally {
       setPending(false);
@@ -67,7 +90,8 @@ export function ReservationForm() {
           </p>
         </div>
         <p className="max-w-md">
-          Votre table sera réservée après confirmation personnelle de notre équipe.
+          Votre table sera réservée après confirmation personnelle de notre
+          équipe.
         </p>
       </div>
     );
@@ -89,7 +113,9 @@ export function ReservationForm() {
                   value={field.input ?? ""}
                 />
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </Field>
             )}
@@ -107,7 +133,9 @@ export function ReservationForm() {
                   value={field.input ?? ""}
                 />
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </Field>
             )}
@@ -127,7 +155,9 @@ export function ReservationForm() {
                 value={field.input ?? ""}
               />
               {field.errors ? (
-                <FieldError errors={field.errors.map((message) => ({ message }))} />
+                <FieldError
+                  errors={field.errors.map((message) => ({ message }))}
+                />
               ) : null}
             </Field>
           )}
@@ -148,7 +178,9 @@ export function ReservationForm() {
                   value={String(field.input ?? "2")}
                 />
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </Field>
             )}
@@ -165,7 +197,9 @@ export function ReservationForm() {
                   value={field.input ?? ""}
                 />
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </Field>
             )}
@@ -183,7 +217,9 @@ export function ReservationForm() {
                   value={field.input ?? ""}
                 />
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </Field>
             )}
@@ -194,7 +230,10 @@ export function ReservationForm() {
           {(field) => (
             <Field data-invalid={field.errors !== null}>
               <FieldLabel htmlFor="reservation-occasion">
-                Occasion <span className="font-normal text-muted-foreground">(facultatif)</span>
+                Occasion{" "}
+                <span className="font-normal text-muted-foreground">
+                  (facultatif)
+                </span>
               </FieldLabel>
               <Input
                 {...field.props}
@@ -212,7 +251,9 @@ export function ReservationForm() {
             <Field data-invalid={field.errors !== null}>
               <FieldLabel htmlFor="reservation-message">
                 Votre message{" "}
-                <span className="font-normal text-muted-foreground">(facultatif)</span>
+                <span className="font-normal text-muted-foreground">
+                  (facultatif)
+                </span>
               </FieldLabel>
               <InputGroup>
                 <InputGroupTextarea
@@ -229,7 +270,10 @@ export function ReservationForm() {
 
         <FormischField of={form} path={["consent"]}>
           {(field) => (
-            <Field data-invalid={field.errors !== null} orientation="horizontal">
+            <Field
+              data-invalid={field.errors !== null}
+              orientation="horizontal"
+            >
               <Checkbox
                 aria-invalid={field.errors !== null}
                 checked={field.input ?? false}
@@ -238,13 +282,17 @@ export function ReservationForm() {
               />
               <div>
                 <FieldLabel htmlFor="reservation-consent">
-                  J’accepte que mes informations soient utilisées pour traiter cette réservation.
+                  J’accepte que mes informations soient utilisées pour traiter
+                  cette réservation.
                 </FieldLabel>
                 <FieldDescription>
-                  Vos données ne sont ni revendues ni utilisées à des fins publicitaires.
+                  Vos données ne sont ni revendues ni utilisées à des fins
+                  publicitaires.
                 </FieldDescription>
                 {field.errors ? (
-                  <FieldError errors={field.errors.map((message) => ({ message }))} />
+                  <FieldError
+                    errors={field.errors.map((message) => ({ message }))}
+                  />
                 ) : null}
               </div>
             </Field>
@@ -265,7 +313,11 @@ export function ReservationForm() {
       </FieldGroup>
 
       <Button disabled={pending} size="lg" type="submit">
-        {pending ? <Spinner data-icon="inline-start" /> : <SendIcon data-icon="inline-start" />}
+        {pending ? (
+          <Spinner data-icon="inline-start" />
+        ) : (
+          <SendIcon data-icon="inline-start" />
+        )}
         {pending ? "Envoi en cours…" : "Envoyer ma demande"}
       </Button>
     </Form>

@@ -19,11 +19,15 @@ export const errorPlugin = new Elysia({ name: "domain-errors" }).onError(
       });
     }
     if (code === "PARSE") {
-      return status(400, { code: "INVALID_BODY", message: "Le corps de la requête est invalide." });
+      return status(400, {
+        code: "INVALID_BODY",
+        message: "Le corps de la requête est invalide.",
+      });
     }
     if (code === "NOT_FOUND") return;
 
-    const cause = error instanceof Error ? error : new Error("Unknown request error");
+    const cause =
+      error instanceof Error ? error : new Error("Unknown request error");
     console.error("request_failed", {
       name: cause.name,
       message: cause.message,

@@ -1,10 +1,16 @@
 import { Link } from "@teyik0/furin/link";
-import { ArrowRightIcon, Clock3Icon, MapPinIcon, UtensilsIcon } from "lucide-react";
-import { galleryService } from "@/api/modules/gallery/service";
-import { menuService } from "@/api/modules/menu/service";
+import { renderServerComponent } from "@teyik0/furin/rsc";
+import { Clock3Icon, MapPinIcon, UtensilsIcon } from "lucide-react";
 import { ResponsiveImage } from "@/components/public/responsive-image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { getApi, unwrapApiResult } from "@/lib/api-client";
 import { route } from "./root";
 
 export default route.page({
@@ -14,59 +20,88 @@ export default route.page({
       { title: "Indian Coffee · Restaurant indien à Savigny-le-Temple" },
       {
         name: "description",
-        content: "Cuisine indienne et sri-lankaise faite maison à Savigny-le-Temple.",
+        content:
+          "Cuisine indienne et sri-lankaise faite maison à Savigny-le-Temple.",
       },
     ],
   }),
   loader: async () => {
-    const [featured, gallery] = await Promise.all([
-      menuService.getFeatured(),
-      galleryService.getPage(1),
+    const [categoriesResult, galleryResult, contentResult] = await Promise.all([
+      getApi().api.menu.get(),
+      getApi().api.gallery.get({ query: { page: 1 } }),
+      getApi().api.content.get(),
     ]);
-    return { featured, gallery: gallery.images.slice(0, 6) };
-  },
-  component: ({ featured, gallery, hero, story, hours, addressLine, postalCode, city, mapUrl }) => (
-    <>
-      <section className="hero-grain relative overflow-hidden bg-tamarind text-primary-foreground">
-        <div className="mx-auto grid min-h-[76svh] max-w-7xl lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="reveal flex flex-col justify-center gap-8 px-5 py-20 lg:px-8 lg:py-28">
-            <p className="font-semibold uppercase tracking-[0.24em] text-saffron text-xs">
-              {hero.eyebrow}
-            </p>
-            <h1 className="max-w-3xl text-balance font-display text-5xl leading-[0.96] sm:text-6xl lg:text-8xl">
-              {hero.title}
-            </h1>
-            <p className="max-w-xl text-lg text-primary-foreground/78 leading-relaxed">
-              {hero.intro}
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button nativeButton={false} render={<Link to="/menu" />} size="lg">
-                Découvrir la carte <ArrowRightIcon data-icon="inline-end" />
-              </Button>
-              <Button
-                nativeButton={false}
-                render={<Link to="/contact" />}
-                size="lg"
-                variant="outline"
-              >
-                Réserver une table
-              </Button>
+    const categories = unwrapApiResult(categoriesResult);
+    const gallery = unwrapApiResult(galleryResult);
+    const content = unwrapApiResult(contentResult);
+    const featured = categories
+      .flatMap((category) =>
+        category.sections.flatMap((section) => section.items),
+      )
+      .filter((item) => item.featured)
+      .slice(0, 3);
+    return {
+      featured,
+      gallery: gallery.images.slice(0, 6),
+      heroRsc: await renderServerComponent(
+        <section className="hero-grain relative overflow-hidden bg-tamarind text-primary-foreground">
+          <div className="mx-auto grid min-h-[76svh] max-w-7xl lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="reveal flex flex-col justify-center gap-8 px-5 py-20 lg:px-8 lg:py-28">
+              <p className="font-semibold uppercase tracking-[0.24em] text-saffron text-xs">
+                {content.hero.eyebrow}
+              </p>
+              <h1 className="max-w-3xl text-balance font-display text-5xl leading-[0.96] sm:text-6xl lg:text-8xl">
+                {content.hero.title}
+              </h1>
+              <p className="max-w-xl text-lg text-primary-foreground/78 leading-relaxed">
+                {content.hero.intro}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 font-medium text-primary-foreground"
+                  href="/menu"
+                >
+                  Découvrir la carte <span aria-hidden>→</span>
+                </a>
+                <a
+                  className="inline-flex h-10 items-center justify-center rounded-md border px-4 font-medium"
+                  href="/contact"
+                >
+                  Réserver une table
+                </a>
+              </div>
+            </div>
+            <div className="reveal reveal-late relative min-h-96 lg:min-h-full">
+              <img
+                alt="Table généreuse de spécialités indiennes chez Indian Coffee"
+                className="absolute inset-0 size-full object-cover"
+                decoding="async"
+                fetchPriority="high"
+                height={1000}
+                src="/public/cover.webp"
+                width={1000}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-tamarind/60 via-transparent to-transparent lg:bg-gradient-to-r" />
             </div>
           </div>
-          <div className="reveal reveal-late relative min-h-96 lg:min-h-full">
-            <ResponsiveImage
-              alt="Table généreuse de spécialités indiennes chez Indian Coffee"
-              className="absolute inset-0 size-full"
-              height={1000}
-              priority
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              src="/public/cover.webp"
-              width={1000}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-tamarind/60 via-transparent to-transparent lg:bg-gradient-to-r" />
-          </div>
-        </div>
-      </section>
+        </section>,
+      ),
+    };
+  },
+  tags: ["content", "menu", "gallery"],
+  component: ({
+    featured,
+    gallery,
+    heroRsc,
+    story,
+    hours,
+    addressLine,
+    postalCode,
+    city,
+    mapUrl,
+  }) => (
+    <>
+      {heroRsc}
 
       <section className="mx-auto grid max-w-7xl gap-12 px-5 py-24 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
         <div>
@@ -78,7 +113,9 @@ export default route.page({
           </h2>
         </div>
         <div className="flex flex-col gap-8">
-          <p className="max-w-3xl text-lg leading-8 text-muted-foreground">{story.body}</p>
+          <p className="max-w-3xl text-lg leading-8 text-muted-foreground">
+            {story.body}
+          </p>
           <div className="editorial-rule" />
           <div className="grid gap-5 sm:grid-cols-3">
             <div className="flex items-center gap-3">
@@ -104,9 +141,15 @@ export default route.page({
               <p className="mb-3 font-semibold uppercase tracking-[0.22em] text-primary text-xs">
                 À goûter
               </p>
-              <h2 className="font-display text-4xl sm:text-5xl">Les signatures de la maison</h2>
+              <h2 className="font-display text-4xl sm:text-5xl">
+                Les signatures de la maison
+              </h2>
             </div>
-            <Button nativeButton={false} render={<Link to="/menu" />} variant="outline">
+            <Button
+              nativeButton={false}
+              render={<Link to="/menu" />}
+              variant="outline"
+            >
               Voir toute la carte
             </Button>
           </div>
@@ -139,9 +182,12 @@ export default route.page({
 
       <section className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
         <div className="mb-10 grid gap-6 md:grid-cols-2 md:items-end">
-          <h2 className="font-display text-4xl sm:text-5xl">Un aperçu de notre table</h2>
+          <h2 className="font-display text-4xl sm:text-5xl">
+            Un aperçu de notre table
+          </h2>
           <p className="max-w-xl text-muted-foreground md:justify-self-end">
-            Des assiettes colorées, un tandoor brûlant et une salle pensée pour prendre le temps.
+            Des assiettes colorées, un tandoor brûlant et une salle pensée pour
+            prendre le temps.
           </p>
         </div>
         <div className="grid auto-rows-[12rem] grid-cols-2 gap-3 md:grid-cols-4">
@@ -166,7 +212,9 @@ export default route.page({
               <p className="mb-3 font-semibold uppercase tracking-[0.22em] text-saffron text-xs">
                 Venir chez nous
               </p>
-              <CardTitle className="text-4xl">À quelques minutes de Carré Sénart</CardTitle>
+              <CardTitle className="text-4xl">
+                À quelques minutes de Carré Sénart
+              </CardTitle>
             </div>
             <CardDescription className="text-primary-foreground/70 md:text-lg">
               {addressLine}, {postalCode} {city}

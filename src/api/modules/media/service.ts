@@ -23,7 +23,11 @@ function safeName(name: string) {
 export const mediaService = {
   async upload(file: File, alt: string) {
     if (file.size > 15 * 1024 * 1024) {
-      throw new DomainError("IMAGE_TOO_LARGE", "L’image ne doit pas dépasser 15 Mo.", 422);
+      throw new DomainError(
+        "IMAGE_TOO_LARGE",
+        "L’image ne doit pas dépasser 15 Mo.",
+        422,
+      );
     }
     const client = getUploadThing();
     if (!client) {
@@ -35,22 +39,38 @@ export const mediaService = {
     }
 
     const source = await file.arrayBuffer();
-    const probe = new Bun.Image(source, { maxPixels: 40_000_000, autoOrient: true });
+    const probe = new Bun.Image(source, {
+      maxPixels: 40_000_000,
+      autoOrient: true,
+    });
     const [metadata, placeholder, checksum] = await Promise.all([
       probe.metadata(),
       probe.placeholder(),
       sha256(source),
     ]);
     if (!metadata.format) {
-      throw new DomainError("INVALID_IMAGE", "Le fichier ne contient pas une image reconnue.", 422);
+      throw new DomainError(
+        "INVALID_IMAGE",
+        "Le fichier ne contient pas une image reconnue.",
+        422,
+      );
     }
 
     const prepared = await Promise.all(
       variants.map(async (variant) => {
-        const pipeline = new Bun.Image(source, { maxPixels: 40_000_000, autoOrient: true })
-          .resize(variant.width, undefined, { withoutEnlargement: true, fit: "inside" })
+        const pipeline = new Bun.Image(source, {
+          maxPixels: 40_000_000,
+          autoOrient: true,
+        })
+          .resize(variant.width, undefined, {
+            withoutEnlargement: true,
+            fit: "inside",
+          })
           .webp({ quality: variant.quality });
-        const [bytes, outputMetadata] = await Promise.all([pipeline.bytes(), pipeline.metadata()]);
+        const [bytes, outputMetadata] = await Promise.all([
+          pipeline.bytes(),
+          pipeline.metadata(),
+        ]);
         return {
           definition: variant,
           metadata: outputMetadata,
@@ -63,8 +83,12 @@ export const mediaService = {
       }),
     );
 
-    const results = await client.uploadFiles(prepared.map((entry) => entry.file));
-    const successfulKeys = results.flatMap((result) => (result.data ? [result.data.key] : []));
+    const results = await client.uploadFiles(
+      prepared.map((entry) => entry.file),
+    );
+    const successfulKeys = results.flatMap((result) =>
+      result.data ? [result.data.key] : [],
+    );
     if (results.some((result) => result.error || !result.data)) {
       if (successfulKeys.length > 0) await client.deleteFiles(successfulKeys);
       throw new DomainError(
@@ -76,7 +100,12 @@ export const mediaService = {
 
     const uploaded = prepared.map((entry, index) => {
       const data = results[index]?.data;
-      if (!data) throw new DomainError("UPLOAD_FAILED", "Réponse UploadThing incomplète.", 502);
+      if (!data)
+        throw new DomainError(
+          "UPLOAD_FAILED",
+          "Réponse UploadThing incomplète.",
+          502,
+        );
       return {
         key: data.key,
         url: data.ufsUrl,

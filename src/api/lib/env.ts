@@ -1,19 +1,29 @@
 import * as v from "valibot";
 
 const EnvSchema = v.object({
-  DATABASE_URL: v.pipe(v.string(), v.nonEmpty("DATABASE_URL est requise."), v.url()),
+  DATABASE_URL: v.pipe(
+    v.string(),
+    v.nonEmpty("DATABASE_URL est requise."),
+    v.url(),
+  ),
   BETTER_AUTH_SECRET: v.optional(v.pipe(v.string(), v.minLength(32))),
   BETTER_AUTH_URL: v.optional(v.pipe(v.string(), v.url())),
   UPLOADTHING_TOKEN: v.optional(v.string()),
   RESEND_API_KEY: v.optional(v.string()),
-  RESEND_FROM: v.optional(v.string(), "Indian Coffee <reservation@indiancoffee.fr>"),
+  RESEND_FROM: v.optional(
+    v.string(),
+    "Indian Coffee <reservation@indiancoffee.fr>",
+  ),
   RESTAURANT_NOTIFICATION_EMAIL: v.optional(
     v.pipe(v.string(), v.email()),
     "indiancoffee77@gmail.com",
   ),
   APP_URL: v.optional(v.pipe(v.string(), v.url()), "http://localhost:3000"),
   CRON_SECRET: v.optional(v.string()),
-  NODE_ENV: v.optional(v.picklist(["development", "test", "production"]), "development"),
+  NODE_ENV: v.optional(
+    v.picklist(["development", "test", "production"]),
+    "development",
+  ),
 });
 
 const parsed = v.safeParse(EnvSchema, process.env);

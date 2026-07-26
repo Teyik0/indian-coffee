@@ -8,7 +8,9 @@ export default function PublicError({ error, reset }: ErrorProps) {
       <p className="font-semibold uppercase tracking-[0.22em] text-primary text-xs">
         Incident {error.digest}
       </p>
-      <h1 className="mt-4 font-display text-6xl">Le service marque une courte pause.</h1>
+      <h1 className="mt-4 font-display text-6xl">
+        Le service marque une courte pause.
+      </h1>
       <p className="mt-5 text-muted-foreground">{error.message}</p>
       <Button className="mt-8" onClick={reset}>
         <RotateCcwIcon data-icon="inline-start" />

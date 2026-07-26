@@ -1,4 +1,3 @@
-import { Link } from "@teyik0/furin/link";
 import type { SiteContent } from "@/api/modules/content/model";
 
 export function PublicFooter({ content }: { content: SiteContent }) {
@@ -21,13 +20,17 @@ export function PublicFooter({ content }: { content: SiteContent }) {
             <br />
             {content.postalCode} {content.city}
           </address>
-          <a href={`tel:${content.phone.replace(/\s/g, "")}`}>{content.phone}</a>
+          <a href={`tel:${content.phone.replace(/\s/g, "")}`}>
+            {content.phone}
+          </a>
         </div>
         <div className="flex flex-col gap-3">
-          <p className="font-semibold uppercase tracking-[0.18em] text-saffron text-xs">Explorer</p>
-          <Link to="/menu">La carte</Link>
-          <Link to="/contact">Réserver une table</Link>
-          <Link to="/privacy">Confidentialité</Link>
+          <p className="font-semibold uppercase tracking-[0.18em] text-saffron text-xs">
+            Explorer
+          </p>
+          <a href="/menu">La carte</a>
+          <a href="/contact">Réserver une table</a>
+          <a href="/privacy">Confidentialité</a>
         </div>
       </div>
       <div className="border-primary-foreground/15 border-t px-5 py-5 text-center text-primary-foreground/60 text-sm">

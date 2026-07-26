@@ -1,20 +1,29 @@
+// biome-ignore-all lint/performance/noJsxPropsBind: Furin composite slots are component factories
+import { CompositeComponent } from "@teyik0/furin/rsc";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
-import { menuService } from "@/api/modules/menu/service";
+import { createAdminPageShell } from "@/components/admin/admin-page-rsc";
 import { MenuManager } from "@/components/admin/menu-manager";
+import { getApi, unwrapApiResult } from "@/lib/api-client";
 import { route } from "../root";
 
 export default route.page({
   loader: async ({ request, redirect }) => {
     await requireBackOfficeSession(request, redirect, "menu:write");
-    return { categories: await menuService.getPublic({}) };
+    const categories = unwrapApiResult(
+      await getApi().api.admin.menu.get({ headers: request.headers }),
+    );
+    return {
+      categories,
+      shell: await createAdminPageShell(
+        "Disponibilité et publication",
+        "La carte",
+      ),
+    };
   },
-  component: ({ categories }) => (
-    <div className="flex flex-col gap-8">
-      <div>
-        <p className="text-muted-foreground">Disponibilité et publication</p>
-        <h1 className="font-display text-4xl">La carte</h1>
-      </div>
-      <MenuManager initialCategories={categories} />
-    </div>
+  component: ({ categories, shell }) => (
+    <CompositeComponent
+      src={shell}
+      Content={() => <MenuManager initialCategories={categories} />}
+    />
   ),
 });

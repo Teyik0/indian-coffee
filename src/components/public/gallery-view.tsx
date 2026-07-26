@@ -40,7 +40,10 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
       </div>
       {visibleCount < images.length ? (
         <div className="mt-10 flex justify-center">
-          <Button onClick={() => setVisibleCount((count) => count + 12)} variant="outline">
+          <Button
+            onClick={() => setVisibleCount((count) => count + 12)}
+            variant="outline"
+          >
             Charger plus de photos
           </Button>
         </div>
@@ -53,7 +56,9 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
         <DialogContent className="max-w-4xl p-3" showCloseButton>
           <DialogHeader className="sr-only">
             <DialogTitle>{selected?.alt ?? "Photo Indian Coffee"}</DialogTitle>
-            <DialogDescription>{selected?.caption ?? "Galerie du restaurant"}</DialogDescription>
+            <DialogDescription>
+              {selected?.caption ?? "Galerie du restaurant"}
+            </DialogDescription>
           </DialogHeader>
           {selected ? (
             <ResponsiveImage

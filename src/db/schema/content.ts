@@ -25,7 +25,9 @@ export const siteSettings = pgTable("site_settings", {
   facebookUrl: text("facebook_url"),
   reservationNotice: text("reservation_notice").notNull(),
   version: integer("version").default(1).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const homeContent = pgTable("home_content", {
@@ -35,10 +37,16 @@ export const homeContent = pgTable("home_content", {
   heroIntro: text("hero_intro").notNull(),
   storyTitle: text("story_title").notNull(),
   storyBody: text("story_body").notNull(),
-  heroMediaId: uuid("hero_media_id").references(() => mediaAssets.id, { onDelete: "set null" }),
-  storyMediaId: uuid("story_media_id").references(() => mediaAssets.id, { onDelete: "set null" }),
+  heroMediaId: uuid("hero_media_id").references(() => mediaAssets.id, {
+    onDelete: "set null",
+  }),
+  storyMediaId: uuid("story_media_id").references(() => mediaAssets.id, {
+    onDelete: "set null",
+  }),
   version: integer("version").default(1).notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const openingHours = pgTable("opening_hours", {

@@ -6,18 +6,27 @@ import { db } from "@/api/lib/db";
 import { env } from "@/api/lib/env";
 import { schema } from "@/db/schema";
 
-const trustedOrigins = new Set([env.APP_URL, env.BETTER_AUTH_URL ?? env.APP_URL]);
+const trustedOrigins = new Set([
+  env.APP_URL,
+  env.BETTER_AUTH_URL ?? env.APP_URL,
+]);
 if (env.NODE_ENV === "development") {
   const appUrl = new URL(env.APP_URL);
-  const port = appUrl.port || "3000";
-  trustedOrigins.add(`${appUrl.protocol}//localhost:${port}`);
-  trustedOrigins.add(`${appUrl.protocol}//127.0.0.1:${port}`);
+  const ports = new Set(
+    [appUrl.port ?? "3000", process.env.PORT].filter(Boolean) as string[],
+  );
+  for (const port of ports) {
+    trustedOrigins.add(`${appUrl.protocol}//localhost:${port}`);
+    trustedOrigins.add(`${appUrl.protocol}//127.0.0.1:${port}`);
+  }
 }
 
 export const auth = betterAuth({
   appName: "Indian Coffee",
   baseURL: env.BETTER_AUTH_URL ?? env.APP_URL,
-  secret: env.BETTER_AUTH_SECRET ?? "development-only-secret-change-before-production",
+  secret:
+    env.BETTER_AUTH_SECRET ??
+    "development-only-secret-change-before-production",
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -29,11 +38,17 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     revokeSessionsOnPasswordReset: true,
   },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
   user: {
     additionalFields: {
       role: {
         type: "string",
-        defaultValue: "editor",
+        defaultValue: "customer",
         input: false,
       },
     },
@@ -51,35 +66,31 @@ export const auth = betterAuth({
 
 export type AdminSession = Awaited<ReturnType<typeof auth.api.getSession>>;
 
-export async function getSession(request: Request) {
-  return auth.api.getSession({ headers: request.headers });
-}
-
-export function isBackOfficeUser(session: AdminSession) {
-  const role = session?.user.role;
-  return role === "admin" || role === "editor";
-}
-
 export const betterAuthPlugin = new Elysia({ name: "better-auth" })
-  .get("/api/auth/*", ({ request }) => auth.handler(request))
-  .post("/api/auth/*", ({ request }) => auth.handler(request))
+  .mount(auth.handler)
   .macro({
     session: {
       async resolve({ request, status }) {
-        const current = await getSession(request);
+        const current = await auth.api.getSession({ headers: request.headers });
         if (!current) {
-          return status(401, { code: "UNAUTHORIZED", message: "Authentification requise." });
+          return status(401, {
+            code: "UNAUTHORIZED",
+            message: "Authentification requise.",
+          });
         }
         return current;
       },
     },
-    backOffice: {
+    onlyAdmin: {
       async resolve({ request, status }) {
-        const current = await getSession(request);
+        const current = await auth.api.getSession({ headers: request.headers });
         if (!current) {
-          return status(401, { code: "UNAUTHORIZED", message: "Authentification requise." });
+          return status(401, {
+            code: "UNAUTHORIZED",
+            message: "Authentification requise.",
+          });
         }
-        if (!isBackOfficeUser(current)) {
+        if (current.user.role !== "admin") {
           return status(403, { code: "FORBIDDEN", message: "Accès refusé." });
         }
         return current;

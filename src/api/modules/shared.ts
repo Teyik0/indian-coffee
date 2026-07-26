@@ -35,7 +35,10 @@ export function formatPrice(priceCents: number) {
 }
 
 export async function sha256(input: string | ArrayBuffer) {
-  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  const bytes =
+    typeof input === "string" ? new TextEncoder().encode(input) : input;
   const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }

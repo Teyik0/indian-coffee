@@ -12,6 +12,9 @@ export const adminRoutes = {
 } as const;
 
 export type AdminPath =
-  | (typeof adminRoutes)[Exclude<keyof typeof adminRoutes, "menuItem" | "reservation">]
+  | (typeof adminRoutes)[Exclude<
+      keyof typeof adminRoutes,
+      "menuItem" | "reservation"
+    >]
   | ReturnType<typeof adminRoutes.menuItem>
   | ReturnType<typeof adminRoutes.reservation>;

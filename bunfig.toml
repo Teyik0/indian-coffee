@@ -3,4 +3,8 @@ plugins = ["bun-plugin-tailwind", "@teyik0/furin/strip-plugin"]
 env = "FURIN_PUBLIC_*"
 
 [install]
+linker = "isolated"
 peer = false
+
+[test]
+preload = ["./tests/preload.ts"]

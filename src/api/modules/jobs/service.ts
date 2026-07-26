@@ -66,7 +66,12 @@ export const jobService = {
     const jobs = await db
       .select()
       .from(outboxJobs)
-      .where(and(eq(outboxJobs.state, "PENDING"), lte(outboxJobs.nextAttemptAt, new Date())))
+      .where(
+        and(
+          eq(outboxJobs.state, "PENDING"),
+          lte(outboxJobs.nextAttemptAt, new Date()),
+        ),
+      )
       .orderBy(asc(outboxJobs.createdAt))
       .limit(10);
     let processed = 0;
@@ -91,8 +96,13 @@ export const jobService = {
             state: attempts >= 10 ? "FAILED" : "PENDING",
             attempts,
             lockedAt: null,
-            lastError: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
-            nextAttemptAt: new Date(Date.now() + Math.min(60, 2 ** attempts) * 60_000),
+            lastError:
+              error instanceof Error
+                ? error.message.slice(0, 500)
+                : "Unknown error",
+            nextAttemptAt: new Date(
+              Date.now() + Math.min(60, 2 ** attempts) * 60_000,
+            ),
           })
           .where(eq(outboxJobs.id, job.id));
         failed += 1;

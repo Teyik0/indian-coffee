@@ -1,22 +1,33 @@
 import { db, eq } from "@/api/lib/db";
 import { initialContent } from "@/api/modules/content/service";
 import { gallerySeed } from "@/api/modules/gallery/data";
-import { legacyMenuMigrationCount, legacyMenuSeed } from "@/api/modules/menu/data";
+import {
+  legacyMenuMigrationCount,
+  legacyMenuSeed,
+} from "@/api/modules/menu/data";
 import { sha256 } from "@/api/modules/shared";
 import { homeContent, openingHours, siteSettings } from "@/db/schema/content";
 import { galleryCollections, galleryEntries } from "@/db/schema/gallery";
 import { mediaAssets } from "@/db/schema/media";
-import { menuCategories, menuItems, menuItemVariants, menuSections } from "@/db/schema/menu";
+import {
+  menuCategories,
+  menuItems,
+  menuItemVariants,
+  menuSections,
+} from "@/db/schema/menu";
 
 const dryRun = process.argv.includes("--dry-run");
 
 const summary = {
   legacyEntries: legacyMenuMigrationCount,
   categories: legacyMenuSeed.length,
-  items: legacyMenuSeed.flatMap((category) => category.sections.flatMap((section) => section.items))
-    .length,
+  items: legacyMenuSeed.flatMap((category) =>
+    category.sections.flatMap((section) => section.items),
+  ).length,
   variants: legacyMenuSeed.flatMap((category) =>
-    category.sections.flatMap((section) => section.items.flatMap((item) => item.variants)),
+    category.sections.flatMap((section) =>
+      section.items.flatMap((item) => item.variants),
+    ),
   ).length,
   galleryImages: gallerySeed.length,
 };
@@ -57,11 +68,24 @@ await db.transaction(async (tx) => {
     })
     .onConflictDoNothing();
 
-  const existingHours = await tx.select({ id: openingHours.id }).from(openingHours).limit(1);
+  const existingHours = await tx
+    .select({ id: openingHours.id })
+    .from(openingHours)
+    .limit(1);
   if (existingHours.length === 0) {
     await tx.insert(openingHours).values([
-      { dayOfWeek: 1, opensAt: "11:00", closesAt: "22:30", label: "Lundi — Jeudi" },
-      { dayOfWeek: 5, opensAt: "11:00", closesAt: "23:00", label: "Vendredi — Samedi" },
+      {
+        dayOfWeek: 1,
+        opensAt: "11:00",
+        closesAt: "22:30",
+        label: "Lundi — Jeudi",
+      },
+      {
+        dayOfWeek: 5,
+        opensAt: "11:00",
+        closesAt: "23:00",
+        label: "Vendredi — Samedi",
+      },
       { dayOfWeek: 7, opensAt: "12:00", closesAt: "22:30", label: "Dimanche" },
     ]);
   }
@@ -85,9 +109,12 @@ await db.transaction(async (tx) => {
         },
       })
       .returning({ id: menuCategories.id });
-    if (!categoryRow) throw new Error(`Category was not created: ${category.slug}`);
+    if (!categoryRow)
+      throw new Error(`Category was not created: ${category.slug}`);
 
-    await tx.delete(menuSections).where(eq(menuSections.categoryId, categoryRow.id));
+    await tx
+      .delete(menuSections)
+      .where(eq(menuSections.categoryId, categoryRow.id));
     for (const [sectionOrder, section] of category.sections.entries()) {
       const [sectionRow] = await tx
         .insert(menuSections)
@@ -98,7 +125,8 @@ await db.transaction(async (tx) => {
           sortOrder: sectionOrder,
         })
         .returning({ id: menuSections.id });
-      if (!sectionRow) throw new Error(`Section was not created: ${section.name}`);
+      if (!sectionRow)
+        throw new Error(`Section was not created: ${section.name}`);
 
       for (const [itemOrder, item] of section.items.entries()) {
         const [itemRow] = await tx
@@ -114,7 +142,8 @@ await db.transaction(async (tx) => {
             sortOrder: itemOrder,
           })
           .returning({ id: menuItems.id });
-        if (!itemRow) throw new Error(`Menu item was not created: ${item.name}`);
+        if (!itemRow)
+          throw new Error(`Menu item was not created: ${item.name}`);
         if (item.variants.length > 0) {
           await tx.insert(menuItemVariants).values(
             item.variants.map((variant, variantOrder) => ({
@@ -132,14 +161,20 @@ await db.transaction(async (tx) => {
 
   const [collection] = await tx
     .insert(galleryCollections)
-    .values({ name: "Restaurant", slug: "restaurant", description: "Carte et ambiance" })
+    .values({
+      name: "Restaurant",
+      slug: "restaurant",
+      description: "Carte et ambiance",
+    })
     .onConflictDoUpdate({
       target: galleryCollections.slug,
       set: { name: "Restaurant", description: "Carte et ambiance" },
     })
     .returning({ id: galleryCollections.id });
   if (!collection) throw new Error("Gallery collection was not created.");
-  await tx.delete(galleryEntries).where(eq(galleryEntries.collectionId, collection.id));
+  await tx
+    .delete(galleryEntries)
+    .where(eq(galleryEntries.collectionId, collection.id));
 
   for (const [sortOrder, image] of gallerySeed.entries()) {
     const source = Bun.file(`public/${image.src.replace("/public/", "")}`);

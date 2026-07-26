@@ -37,7 +37,10 @@ export function PublicHeader() {
           </span>
         </Link>
 
-        <nav aria-label="Navigation principale" className="hidden items-center gap-1 md:flex">
+        <nav
+          aria-label="Navigation principale"
+          className="hidden items-center gap-1 md:flex"
+        >
           {navigation.map((item) => (
             <Button
               key={item.to}
@@ -53,16 +56,27 @@ export function PublicHeader() {
         <div className="md:hidden">
           <Sheet onOpenChange={setMobileMenuOpen} open={mobileMenuOpen}>
             <SheetTrigger
-              render={<Button aria-label="Ouvrir le menu" size="icon" variant="outline" />}
+              render={
+                <Button
+                  aria-label="Ouvrir le menu"
+                  size="icon"
+                  variant="outline"
+                />
+              }
             >
               <MenuIcon />
             </SheetTrigger>
             <SheetContent side="right">
               <SheetHeader>
                 <SheetTitle>Indian Coffee</SheetTitle>
-                <SheetDescription>Restaurant indien à Savigny-le-Temple</SheetDescription>
+                <SheetDescription>
+                  Restaurant indien à Savigny-le-Temple
+                </SheetDescription>
               </SheetHeader>
-              <nav aria-label="Navigation mobile" className="flex flex-col gap-2 px-4">
+              <nav
+                aria-label="Navigation mobile"
+                className="flex flex-col gap-2 px-4"
+              >
                 {navigation.map((item) => (
                   <Button
                     className="justify-start"

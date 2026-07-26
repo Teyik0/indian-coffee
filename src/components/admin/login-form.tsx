@@ -1,22 +1,38 @@
-import { Form, Field as FormischField, type SubmitHandler, useForm } from "@formisch/react";
+import {
+  Form,
+  Field as FormischField,
+  type SubmitHandler,
+  useForm,
+} from "@formisch/react";
 import { LogInIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import * as v from "valibot";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
 
 const LoginSchema = v.object({
   email: v.pipe(v.string(), v.email("Adresse email invalide.")),
-  password: v.pipe(v.string(), v.minLength(12, "Le mot de passe contient au moins 12 caractères.")),
+  password: v.pipe(
+    v.string(),
+    v.minLength(12, "Le mot de passe contient au moins 12 caractères."),
+  ),
 });
 
 export function LoginForm() {
   const [pending, setPending] = useState(false);
-  const form = useForm({ schema: LoginSchema, initialInput: { email: "", password: "" } });
+  const form = useForm({
+    schema: LoginSchema,
+    initialInput: { email: "", password: "" },
+  });
   const submit: SubmitHandler<typeof LoginSchema> = async (output) => {
     setPending(true);
     const result = await authClient.signIn.email(output);
@@ -46,7 +62,9 @@ export function LoginForm() {
                 value={field.input ?? ""}
               />
               {field.errors ? (
-                <FieldError errors={field.errors.map((message) => ({ message }))} />
+                <FieldError
+                  errors={field.errors.map((message) => ({ message }))}
+                />
               ) : null}
             </Field>
           )}
@@ -64,15 +82,29 @@ export function LoginForm() {
                 value={field.input ?? ""}
               />
               {field.errors ? (
-                <FieldError errors={field.errors.map((message) => ({ message }))} />
+                <FieldError
+                  errors={field.errors.map((message) => ({ message }))}
+                />
               ) : null}
             </Field>
           )}
         </FormischField>
       </FieldGroup>
       <Button disabled={pending} size="lg" type="submit">
-        {pending ? <Spinner data-icon="inline-start" /> : <LogInIcon data-icon="inline-start" />}
+        {pending ? (
+          <Spinner data-icon="inline-start" />
+        ) : (
+          <LogInIcon data-icon="inline-start" />
+        )}
         {pending ? "Connexion…" : "Se connecter"}
+      </Button>
+      <Button
+        disabled={pending}
+        size="lg"
+        type="button"
+        onClick={() => authClient.signIn.social({ provider: "google" })}
+      >
+        Se connecter avec google
       </Button>
     </Form>
   );

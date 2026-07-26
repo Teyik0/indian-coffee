@@ -35,13 +35,26 @@ const links: Array<{
   icon: typeof LayoutDashboardIcon;
   adminOnly?: boolean;
 }> = [
-  { to: adminRoutes.dashboard, label: "Vue d’ensemble", icon: LayoutDashboardIcon },
+  {
+    to: adminRoutes.dashboard,
+    label: "Vue d’ensemble",
+    icon: LayoutDashboardIcon,
+  },
   { to: adminRoutes.menu, label: "Carte", icon: SoupIcon },
   { to: adminRoutes.gallery, label: "Galerie", icon: GalleryVerticalEndIcon },
   { to: adminRoutes.content, label: "Contenu", icon: NotebookTabsIcon },
   { to: adminRoutes.hours, label: "Horaires", icon: CalendarClockIcon },
-  { to: adminRoutes.reservations, label: "Réservations", icon: PanelsTopLeftIcon },
-  { to: adminRoutes.users, label: "Utilisateurs", icon: UsersIcon, adminOnly: true },
+  {
+    to: adminRoutes.reservations,
+    label: "Réservations",
+    icon: PanelsTopLeftIcon,
+  },
+  {
+    to: adminRoutes.users,
+    label: "Utilisateurs",
+    icon: UsersIcon,
+    adminOnly: true,
+  },
 ];
 
 export function AdminShell({
@@ -86,7 +99,10 @@ export function AdminShell({
                   .filter((item) => !item.adminOnly || user.role === "admin")
                   .map((item) => (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton render={<AdminLink to={item.to} />} tooltip={item.label}>
+                      <SidebarMenuButton
+                        render={<AdminLink to={item.to} />}
+                        tooltip={item.label}
+                      >
                         <item.icon />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
@@ -99,7 +115,9 @@ export function AdminShell({
         <SidebarFooter>
           <div className="min-w-0 px-2 group-data-[collapsible=icon]:hidden">
             <p className="truncate font-medium text-sm">{user.name}</p>
-            <p className="truncate text-sidebar-foreground/60 text-xs">{user.email}</p>
+            <p className="truncate text-sidebar-foreground/60 text-xs">
+              {user.email}
+            </p>
           </div>
           <Button onClick={signOut} size="sm" variant="ghost">
             <LogOutIcon data-icon="inline-start" /> Déconnexion
@@ -109,11 +127,15 @@ export function AdminShell({
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur-xl">
           <SidebarTrigger />
-          <span className="text-muted-foreground text-sm">Back-office Indian Coffee</span>
+          <span className="text-muted-foreground text-sm">
+            Back-office Indian Coffee
+          </span>
           <Button
             className="ml-auto"
             nativeButton={false}
-            render={<a aria-label="Voir le site public Indian Coffee" href="/" />}
+            render={
+              <a aria-label="Voir le site public Indian Coffee" href="/" />
+            }
             size="sm"
             variant="outline"
           >

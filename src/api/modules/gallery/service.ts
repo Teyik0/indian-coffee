@@ -15,7 +15,10 @@ export const galleryService = {
         height: mediaAssets.mediumHeight,
       })
       .from(galleryEntries)
-      .innerJoin(galleryCollections, eq(galleryEntries.collectionId, galleryCollections.id))
+      .innerJoin(
+        galleryCollections,
+        eq(galleryEntries.collectionId, galleryCollections.id),
+      )
       .innerJoin(mediaAssets, eq(galleryEntries.mediaId, mediaAssets.id))
       .where(
         and(
