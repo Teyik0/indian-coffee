@@ -23,20 +23,43 @@ import { api, apiErrorMessage } from "@/lib/api-client";
 export function MediaUploadForm() {
   const [pending, setPending] = useState(false);
   const form = useForm({
-    schema: MediaUploadSchema,
     initialInput: { alt: "" },
+    schema: MediaUploadSchema,
   });
+
   const submit: SubmitHandler<typeof MediaUploadSchema> = async (output) => {
     setPending(true);
-    const { error } = await api.api.admin.media.post(output);
-    setPending(false);
-    if (error) {
+    const { data, error } = await api.api.admin.media.post(output);
+    if (error || !data) {
+      setPending(false);
       toast.error("Upload impossible", {
         description: apiErrorMessage(error, "L’image n’a pas pu être envoyée."),
       });
       return;
     }
-    toast.success("Image optimisée et enregistrée");
+
+    // L'upload ne créait que le média : l'image n'entrait jamais dans la
+    // galerie et restait donc invisible partout.
+    const entry = await api.api.admin.gallery.post({
+      caption: "",
+      collectionSlug: "restaurant",
+      mediaId: data.id,
+    });
+    setPending(false);
+
+    if (entry.error) {
+      toast.warning("Image envoyée, mais non publiée", {
+        description: apiErrorMessage(
+          entry.error,
+          "Ajoutez-la à la galerie depuis la liste."
+        ),
+      });
+      return;
+    }
+
+    toast.success("Image ajoutée à la galerie", {
+      description: "Rechargez la page pour la voir apparaître dans la grille.",
+    });
   };
 
   return (
@@ -56,7 +79,7 @@ export function MediaUploadForm() {
                 value={field.input ?? ""}
               />
               <FieldDescription>
-                Décrivez ce que montre la photo.
+                Lue par les lecteurs d’écran et indexée par les moteurs.
               </FieldDescription>
               {field.errors ? (
                 <FieldError
@@ -80,7 +103,7 @@ export function MediaUploadForm() {
                 type="file"
               />
               <FieldDescription>
-                15 Mo maximum. Trois WebP et un placeholder seront générés.
+                15 Mo maximum. Trois WebP et un aperçu flouté seront générés.
               </FieldDescription>
               {field.errors ? (
                 <FieldError

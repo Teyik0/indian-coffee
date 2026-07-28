@@ -1,4 +1,16 @@
-import type { GalleryImage } from "./model";
+/**
+ * Visuels historiques servis depuis `public/`. Ils n'ont pas de variantes
+ * générées ni de flou de chargement : ce sont des fichiers statiques, pas des
+ * médias uploadés, d'où une forme distincte de `GalleryImage`.
+ */
+export interface GallerySeedImage {
+  alt: string;
+  caption: string;
+  height: number;
+  id: string;
+  src: string;
+  width: number;
+}
 
 const filenames = [
   "lamb-tikka.webp",
@@ -43,19 +55,26 @@ const filenames = [
   "dessert-cover.webp",
 ] as const;
 
+const WEBP_EXTENSION_PATTERN = /\.webp$/i;
+const WORD_SEPARATOR_PATTERN = /[-_]/g;
+const ASSET_PREFIX_PATTERN = /^asset /i;
+const COVER_PREFIX_PATTERN = /^cover\d*/i;
+
 function humanize(filename: string) {
   return filename
-    .replace(/\.webp$/i, "")
-    .replace(/[-_]/g, " ")
-    .replace(/^asset /i, "")
-    .replace(/^cover\d*/i, "Ambiance Indian Coffee");
+    .replace(WEBP_EXTENSION_PATTERN, "")
+    .replace(WORD_SEPARATOR_PATTERN, " ")
+    .replace(ASSET_PREFIX_PATTERN, "")
+    .replace(COVER_PREFIX_PATTERN, "Ambiance Indian Coffee");
 }
 
-export const gallerySeed: GalleryImage[] = filenames.map((filename, index) => ({
-  id: `legacy-${index + 1}`,
-  src: `/public/${filename}`,
-  alt: humanize(filename),
-  caption: humanize(filename),
-  width: filename.startsWith("cover") ? 1000 : 400,
-  height: filename.startsWith("cover") ? 667 : 400,
-}));
+export const gallerySeed: GallerySeedImage[] = filenames.map(
+  (filename, index) => ({
+    alt: humanize(filename),
+    caption: humanize(filename),
+    height: filename.startsWith("cover") ? 667 : 400,
+    id: `legacy-${index + 1}`,
+    src: `/public/${filename}`,
+    width: filename.startsWith("cover") ? 1000 : 400,
+  })
+);

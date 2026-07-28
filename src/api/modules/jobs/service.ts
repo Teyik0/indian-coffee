@@ -36,29 +36,39 @@ async function processJob(job: typeof outboxJobs.$inferSelect) {
   if (job.kind === "MEDIA_DELETE") {
     const payload = v.parse(MediaDeleteJobSchema, job.payload);
     const uploadThing = getUploadThing();
-    if (!uploadThing) throw new Error("UploadThing is not configured");
+    if (!uploadThing) {
+      throw new Error("UploadThing is not configured");
+    }
     const result = await uploadThing.deleteFiles(payload.keys);
-    if (!result.success) throw new Error("UploadThing deletion was rejected");
+    if (!result.success) {
+      throw new Error("UploadThing deletion was rejected");
+    }
     return;
   }
 
   const payload = v.parse(EmailJobSchema, job.payload);
   const resend = getResend();
-  if (!resend) throw new Error("Resend is not configured");
+  if (!resend) {
+    throw new Error("Resend is not configured");
+  }
   const reservation = await db
     .select({ id: reservations.id })
     .from(reservations)
     .where(eq(reservations.id, payload.reservationId))
     .limit(1);
-  if (!reservation[0]) throw new Error("Reservation was not found");
+  if (!reservation[0]) {
+    throw new Error("Reservation was not found");
+  }
   const copy = emailCopy(payload.template, payload.reference);
   const response = await resend.emails.send({
     from: env.RESEND_FROM,
-    to: payload.to,
     subject: copy.subject,
     text: copy.text,
+    to: payload.to,
   });
-  if (response.error) throw new Error(response.error.message);
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
 }
 
 export const jobService = {
@@ -69,23 +79,24 @@ export const jobService = {
       .where(
         and(
           eq(outboxJobs.state, "PENDING"),
-          lte(outboxJobs.nextAttemptAt, new Date()),
-        ),
+          lte(outboxJobs.nextAttemptAt, new Date())
+        )
       )
       .orderBy(asc(outboxJobs.createdAt))
       .limit(10);
     let processed = 0;
     let failed = 0;
     for (const job of jobs) {
+      // biome-ignore lint/performance/noAwaitInLoops: le drain traite les tâches dans l'ordre et met à jour ses compteurs.
       await db
         .update(outboxJobs)
-        .set({ state: "PROCESSING", lockedAt: new Date() })
+        .set({ lockedAt: new Date(), state: "PROCESSING" })
         .where(and(eq(outboxJobs.id, job.id), eq(outboxJobs.state, "PENDING")));
       try {
         await processJob(job);
         await db
           .update(outboxJobs)
-          .set({ state: "DONE", processedAt: new Date(), lastError: null })
+          .set({ lastError: null, processedAt: new Date(), state: "DONE" })
           .where(eq(outboxJobs.id, job.id));
         processed += 1;
       } catch (error) {
@@ -93,21 +104,21 @@ export const jobService = {
         await db
           .update(outboxJobs)
           .set({
-            state: attempts >= 10 ? "FAILED" : "PENDING",
             attempts,
-            lockedAt: null,
             lastError:
               error instanceof Error
                 ? error.message.slice(0, 500)
                 : "Unknown error",
+            lockedAt: null,
             nextAttemptAt: new Date(
-              Date.now() + Math.min(60, 2 ** attempts) * 60_000,
+              Date.now() + Math.min(60, 2 ** attempts) * 60_000
             ),
+            state: attempts >= 10 ? "FAILED" : "PENDING",
           })
           .where(eq(outboxJobs.id, job.id));
         failed += 1;
       }
     }
-    return { processed, failed };
+    return { failed, processed };
   },
 };

@@ -7,8 +7,8 @@ export const errorPlugin = new Elysia({ name: "domain-errors" }).onError(
     if (error instanceof DomainError) {
       return status(error.status, {
         code: error.code,
-        message: error.message,
         fieldErrors: error.fieldErrors,
+        message: error.message,
       });
     }
 
@@ -24,18 +24,20 @@ export const errorPlugin = new Elysia({ name: "domain-errors" }).onError(
         message: "Le corps de la requête est invalide.",
       });
     }
-    if (code === "NOT_FOUND") return;
+    if (code === "NOT_FOUND") {
+      return;
+    }
 
     const cause =
       error instanceof Error ? error : new Error("Unknown request error");
     console.error("request_failed", {
-      name: cause.name,
       message: cause.message,
+      name: cause.name,
     });
 
     return status(500, {
       code: "INTERNAL_ERROR",
       message: "Une erreur inattendue est survenue.",
     });
-  },
+  }
 );

@@ -10,11 +10,14 @@ export const mediaRouter = new Elysia({
   .use(betterAuthPlugin)
   .post(
     "/",
-    ({ body, status }) => status(201, mediaService.upload(body.file, body.alt)),
+    // La promesse était passée telle quelle à `status()` : le client recevait
+    // une enveloppe non résolue et ne pouvait pas lire l'identifiant du média.
+    async ({ body, status }) =>
+      status(201, await mediaService.upload(body.file, body.alt)),
     {
+      body: MediaUploadSchema,
       onlyAdmin: true,
       parse: "formdata",
-      body: MediaUploadSchema,
       sync: false,
-    },
+    }
   );

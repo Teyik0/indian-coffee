@@ -5,14 +5,14 @@ import { user } from "@/db/schema/auth";
 
 const InputSchema = v.object({
   email: v.pipe(v.string(), v.email()),
-  password: v.pipe(v.string(), v.minLength(12)),
   name: v.pipe(v.string(), v.minLength(2)),
+  password: v.pipe(v.string(), v.minLength(12)),
 });
 
 const input = v.parse(InputSchema, {
   email: process.env.BOOTSTRAP_ADMIN_EMAIL,
-  password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
   name: process.env.BOOTSTRAP_ADMIN_NAME ?? "Administration Indian Coffee",
+  password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
 });
 
 const created = await auth.api.createUser({

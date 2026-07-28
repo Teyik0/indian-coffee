@@ -12,14 +12,14 @@ const TEST_PASSWORD = "e2e-Session-Password-123456";
 const EDITOR_EMAIL = "e2e-editor@indiancoffee.test";
 const EDITOR_PASSWORD = "e2e-Editor-Password-123456";
 
-const port = 33_000 + Math.floor(Math.random() * 1_000);
+const port = 33_000 + Math.floor(Math.random() * 1000);
 const baseUrl = `http://127.0.0.1:${port}`;
 let server: Bun.Subprocess<"ignore", "pipe", "pipe">;
 
 async function ensureBackOfficeUser(
   email: string,
   password: string,
-  role: "admin" | "editor",
+  role: "admin" | "editor"
 ) {
   const [existing] = await db.select().from(user).where(eq(user.email, email));
   const id =
@@ -28,8 +28,8 @@ async function ensureBackOfficeUser(
       await auth.api.createUser({
         body: {
           email,
-          password,
           name: "E2E Session",
+          password,
         },
       })
     ).user.id;
@@ -43,6 +43,7 @@ async function fetchWhenReady(path: string, init?: RequestInit) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 100; attempt += 1) {
     try {
+      // biome-ignore lint/performance/noAwaitInLoops: cette boucle attend volontairement le démarrage du serveur.
       return await fetch(`${baseUrl}${path}`, init);
     } catch (error) {
       lastError = error;
@@ -66,15 +67,15 @@ beforeAll(async () => {
   server = Bun.spawn([process.execPath, "--hot", "src/server.ts"], {
     cwd: process.cwd(),
     env: runtimeEnv,
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
   // Attend que le serveur réponde.
   const health = await fetchWhenReady("/api/health");
   if (health.status !== 200) {
     const stderr = await new Response(server.stderr).text();
     throw new Error(
-      `Server not ready (status ${health.status}). Logs:\n${stderr}`,
+      `Server not ready (status ${health.status}). Logs:\n${stderr}`
     );
   }
   expect(health.status).toBe(200);
@@ -96,15 +97,15 @@ test("a session cannot be retrieved before signing in", async () => {
 
 test("signing in issues a session cookie and the session is retrievable", async () => {
   const signIn = await fetchWhenReady("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: baseUrl },
     body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }),
+    headers: { "Content-Type": "application/json", Origin: baseUrl },
+    method: "POST",
   });
   expect(signIn.status).toBe(200);
 
   const cookies = signIn.headers.getSetCookie();
   const sessionCookie = cookies.find((value) =>
-    value.startsWith("better-auth.session_token="),
+    value.startsWith("better-auth.session_token=")
   );
   expect(sessionCookie).toBeDefined();
 
@@ -131,7 +132,7 @@ test("the session cookie unlocks the protected admin surface", async () => {
   });
   expect(anonymousHtml.status).toBe(302);
   expect(anonymousHtml.headers.get("location")?.endsWith("/admin/login")).toBe(
-    true,
+    true
   );
 
   // Avec session, l'espace admin (HTML) se charge.
@@ -151,30 +152,49 @@ test("the session cookie unlocks the protected admin surface", async () => {
   expect(authedApi.status).toBe(200);
 });
 
-test("an editor cannot access the admin frontend or API", async () => {
+// Le rôle `editor` est celui de l'équipe de salle : il gère le service et la
+// carte, mais jamais les comptes. L'assertion précédente lui refusait tout accès,
+// ce qui rendait ce rôle — pourtant le défaut de Better Auth — inutilisable.
+test("an editor reaches the service screens but not account management", async () => {
   const cookieHeader = await signInCookie(EDITOR_EMAIL, EDITOR_PASSWORD);
-  const admin = await fetchWhenReady("/admin", {
+
+  const dashboard = await fetchWhenReady("/admin", {
     headers: { accept: "text/html", Cookie: cookieHeader },
     redirect: "manual",
   });
-  expect(admin.status).toBe(403);
+  expect(dashboard.status).toBe(200);
 
-  const adminApi = await fetchWhenReady("/api/admin/session", {
+  const menu = await fetchWhenReady("/api/admin/menu", {
     headers: { Cookie: cookieHeader },
   });
-  expect(adminApi.status).toBe(403);
+  expect(menu.status).toBe(200);
+
+  // La gestion des comptes reste réservée aux administrateurs.
+  const users = await fetchWhenReady("/api/admin/users", {
+    headers: { Cookie: cookieHeader },
+  });
+  expect(users.status).toBe(403);
+
+  const usersPage = await fetchWhenReady("/admin/users", {
+    headers: { accept: "text/html", Cookie: cookieHeader },
+    redirect: "manual",
+  });
+  expect(usersPage.status).toBe(302);
+  expect(usersPage.headers.get("location")?.endsWith("/admin/forbidden")).toBe(
+    true
+  );
 });
 
 test("signing out invalidates the session", async () => {
   const cookieHeader = await signInCookie();
 
   const signOut = await fetchWhenReady("/api/auth/sign-out", {
-    method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Origin: baseUrl,
       Cookie: cookieHeader,
+      Origin: baseUrl,
     },
+    method: "POST",
   });
   expect(signOut.status).toBe(200);
 
@@ -187,9 +207,9 @@ test("signing out invalidates the session", async () => {
 
 async function signInCookie(email = TEST_EMAIL, password = TEST_PASSWORD) {
   const signIn = await fetchWhenReady("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: baseUrl },
     body: JSON.stringify({ email, password }),
+    headers: { "Content-Type": "application/json", Origin: baseUrl },
+    method: "POST",
   });
   expect(signIn.status).toBe(200);
   return signIn.headers

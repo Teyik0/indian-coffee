@@ -9,7 +9,7 @@ interface AuthResult<T> {
 
 async function postAuth<T>(
   path: string,
-  body?: object,
+  body?: object
 ): Promise<AuthResult<T>> {
   const response = await fetch(`/api/auth/${path}`, {
     body: body === undefined ? undefined : JSON.stringify(body),

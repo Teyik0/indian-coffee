@@ -1,50 +1,52 @@
-import { renderServerComponent } from "@teyik0/furin/rsc";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { HoursManager } from "@/components/admin/hours-manager";
+import { AdminPage } from "@/components/admin/page-shell";
+import { Badge } from "@/components/ui/badge";
 import { getApi, unwrapApiResult } from "@/lib/api-client";
 import { route } from "../root";
 
 export default route.page({
   loader: async ({ request, redirect }) => {
     await requireBackOfficeSession(request, redirect, "hours:write");
-    const { hours } = unwrapApiResult(
-      await getApi().api.admin.content.get({ headers: request.headers }),
-    );
-    return {
-      content: await renderServerComponent(
-        <div className="flex flex-col gap-8">
-          <div>
-            <p className="text-muted-foreground">
-              Créneaux et fermetures exceptionnelles
-            </p>
-            <h1 className="font-display text-4xl">Horaires</h1>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Horaires publiés</CardTitle>
-              <CardDescription>Fuseau Europe/Paris</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {hours.map((slot) => (
-                <div
-                  className="flex justify-between border-b pb-4 last:border-0"
-                  key={slot.day}
-                >
-                  <span>{slot.day}</span>
-                  <strong>{slot.value}</strong>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>,
-      ),
-    };
+    const [week, exceptions, content] = await Promise.all([
+      getApi()
+        .api.admin.content.hours.get({ headers: request.headers })
+        .then(unwrapApiResult),
+      getApi()
+        .api.admin.content["special-hours"].get({ headers: request.headers })
+        .then(unwrapApiResult),
+      getApi()
+        .api.admin.content.get({ headers: request.headers })
+        .then(unwrapApiResult),
+    ]);
+    return { exceptions, openState: content.openState, week };
   },
-  component: ({ content }) => content,
+  component: ({ week, exceptions, openState }) => {
+    let statusLabel = "Fermé";
+    if (openState.isOpen) {
+      statusLabel = `Ouvert · ferme à ${openState.closesAt}`;
+    } else if (openState.nextOpensAt) {
+      statusLabel = `Fermé · réouvre ${openState.nextOpensDay} à ${openState.nextOpensAt}`;
+    }
+
+    return (
+      <AdminPage
+        actions={
+          <Badge variant={openState.isOpen ? "secondary" : "outline"}>
+            {statusLabel}
+          </Badge>
+        }
+        description="Ces horaires pilotent l’affichage public, le badge « ouvert maintenant » et les créneaux de réservation proposés aux clients."
+        title="Horaires"
+      >
+        <HoursManager initialExceptions={exceptions} initialWeek={week} />
+      </AdminPage>
+    );
+  },
+  head: () => ({
+    meta: [
+      { title: "Horaires · Administration Indian Coffee" },
+      { content: "noindex, nofollow", name: "robots" },
+    ],
+  }),
 });

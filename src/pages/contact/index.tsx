@@ -1,11 +1,7 @@
-// biome-ignore-all lint/performance/noJsxPropsBind: Furin composite slots are component factories
-import {
-  CompositeComponent,
-  createCompositeComponent,
-} from "@teyik0/furin/rsc";
 import { Clock3Icon, MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
-import type { ComponentType } from "react";
+import { OpenStatus } from "@/components/public/open-status";
 import { ReservationForm } from "@/components/public/reservation-form";
+import { Section } from "@/components/public/section";
 import {
   Card,
   CardContent,
@@ -14,150 +10,180 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { appUrl, headLinks, socialMeta } from "@/lib/head";
 import { route } from "../root";
 
-type IconComponent = ComponentType<{ className?: string }>;
-
 export default route.page({
-  tags: ["content"],
-  loader: async () => {
-    const content = unwrapApiResult(await getApi().api.content.get());
-    return {
-      shell: await createCompositeComponent<{
-        ClockIcon: IconComponent;
-        Form: ComponentType;
-        MailIcon: IconComponent;
-        MapPinIcon: IconComponent;
-        PhoneIcon: IconComponent;
-      }>(({ ClockIcon, Form, MailIcon, MapPinIcon, PhoneIcon }) => (
-        <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-          <div className="mb-14 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-            <div>
-              <p className="mb-3 font-semibold uppercase tracking-[0.22em] text-primary text-xs">
-                Votre table
-              </p>
-              <h1 className="max-w-4xl text-balance font-display text-5xl leading-[0.98] sm:text-7xl">
-                Prenons le temps de vous recevoir.
-              </h1>
-            </div>
-            <p className="max-w-xl text-lg text-muted-foreground">
-              {content.reservationNotice} Pour les groupes de plus de 20
-              personnes, appelez-nous directement.
+  tags: ["content", "reservations"],
+  head: () => ({
+    links: headLinks({ href: `${appUrl}/contact`, rel: "canonical" }),
+    meta: socialMeta({
+      description:
+        "Demandez une table chez Indian Coffee à Savigny-le-Temple : créneaux disponibles, horaires et itinéraire.",
+      image: `${appUrl}/public/cover.webp`,
+      title: "Réserver une table · Indian Coffee",
+      url: `${appUrl}/contact`,
+    }),
+  }),
+  loader: async () => ({
+    calendar: unwrapApiResult(
+      await getApi().api.reservations.calendar.get({ query: { days: 60 } })
+    ),
+  }),
+  component: ({
+    calendar,
+    reservationNotice,
+    phone,
+    email,
+    addressLine,
+    postalCode,
+    city,
+    mapUrl,
+    hours,
+    todayIsoDay,
+    openState,
+  }) => (
+    <>
+      <section className="madras-page-hero grain">
+        <div className="madras-page-hero-inner">
+          <div className="madras-page-hero-copy">
+            <p className="eyebrow mb-5 text-saffron">Votre table</p>
+            <h1>
+              Prenons le temps
+              <br />
+              <em>de vous recevoir.</em>
+            </h1>
+            <p>
+              {reservationNotice} Pour un groupe de plus de{" "}
+              {calendar.maxPartySize} personnes, appelez-nous directement.
             </p>
+            <OpenStatus
+              className="madras-open-status mt-6 self-start"
+              state={openState}
+            />
           </div>
+          <div className="madras-page-hero-image">
+            <img
+              alt="Salle du restaurant Indian Coffee"
+              decoding="async"
+              fetchPriority="high"
+              height={750}
+              src="/public/cover2.webp"
+              width={1000}
+            />
+          </div>
+        </div>
+      </section>
 
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+      <Section rhythm="normal">
+        <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
+          <Card className="madras-reservation-card shadow-card">
+            <CardHeader>
+              <CardTitle className="font-display text-3xl">
+                Demande de réservation
+              </CardTitle>
+              <CardDescription>
+                La table n’est retenue qu’après réception de notre confirmation
+                par courriel.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReservationForm calendar={calendar} />
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col gap-5">
             <Card>
               <CardHeader>
-                <CardTitle className="text-3xl">
-                  Demande de réservation
-                </CardTitle>
+                <CardTitle>Nous contacter</CardTitle>
                 <CardDescription>
-                  La demande n’est définitive qu’après réception de notre
-                  confirmation.
+                  Le téléphone reste le plus rapide pour une demande de dernière
+                  minute.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Form />
+              <CardContent className="flex flex-col gap-5">
+                <a
+                  className="flex items-start gap-3 hover:text-primary"
+                  href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+                >
+                  <PhoneIcon className="mt-0.5 shrink-0 text-primary" />
+                  <span>
+                    <strong className="block">Téléphone</strong>
+                    {phone}
+                  </span>
+                </a>
+                <a
+                  className="flex items-start gap-3 hover:text-primary"
+                  href={`mailto:${email}`}
+                >
+                  <MailIcon className="mt-0.5 shrink-0 text-primary" />
+                  <span>
+                    <strong className="block">Email</strong>
+                    {email}
+                  </span>
+                </a>
+                <a
+                  className="flex items-start gap-3 hover:text-primary"
+                  href={mapUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <MapPinIcon className="mt-0.5 shrink-0 text-primary" />
+                  <span>
+                    <strong className="block">Adresse</strong>
+                    {addressLine}
+                    <br />
+                    {postalCode} {city}
+                  </span>
+                </a>
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-5">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Nous contacter</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-5">
-                  <a
-                    className="flex items-start gap-3"
-                    href={`tel:${content.phone.replace(/\s/g, "")}`}
-                  >
-                    <PhoneIcon className="mt-0.5 text-primary" />
-                    <span>
-                      <strong className="block">Téléphone</strong>
-                      {content.phone}
-                    </span>
-                  </a>
-                  <a
-                    className="flex items-start gap-3"
-                    href={`mailto:${content.email}`}
-                  >
-                    <MailIcon className="mt-0.5 text-primary" />
-                    <span>
-                      <strong className="block">Email</strong>
-                      {content.email}
-                    </span>
-                  </a>
-                  <a
-                    className="flex items-start gap-3"
-                    href={content.mapUrl}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <MapPinIcon className="mt-0.5 text-primary" />
-                    <span>
-                      <strong className="block">Adresse</strong>
-                      {content.addressLine}
-                      <br />
-                      {content.postalCode} {content.city}
-                    </span>
-                  </a>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClockIcon /> Horaires
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  {content.hours.map((slot) => (
-                    <div className="flex justify-between gap-5" key={slot.day}>
-                      <span>{slot.day}</span>
-                      <strong>{slot.value}</strong>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <a
-                className="group relative min-h-60 overflow-hidden rounded-xl bg-tamarind p-7 text-primary-foreground"
-                href={content.mapUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="relative flex h-full flex-col justify-between gap-12">
-                  <span className="font-display text-3xl">
-                    Afficher l’itinéraire
-                  </span>
-                  <span className="text-primary-foreground/70">
-                    La carte interactive ne se charge qu’après votre clic.
-                  </span>
-                </span>
-              </a>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock3Icon className="text-primary" /> Horaires
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="flex flex-col gap-2">
+                  {hours.map((slot) => {
+                    const isToday = slot.isoDays.includes(todayIsoDay);
+                    return (
+                      <div
+                        className={
+                          isToday
+                            ? "flex items-baseline justify-between gap-5 rounded-md bg-secondary/60 px-2 py-1 font-semibold"
+                            : "flex items-baseline justify-between gap-5 px-2 py-1"
+                        }
+                        key={slot.day}
+                      >
+                        <dt>{slot.day}</dt>
+                        <dd className="numeric">{slot.value}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </CardContent>
+            </Card>
+
+            <a
+              className="group relative flex min-h-60 flex-col justify-between gap-12 overflow-hidden bg-tamarind p-7 text-paper transition hover:shadow-lift"
+              href={mapUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span className="font-display text-3xl">
+                Afficher l’itinéraire
+              </span>
+              <span className="text-paper/70">
+                Ouvre Google Maps dans un nouvel onglet. Aucune carte tierce
+                n’est chargée sur cette page.
+              </span>
+            </a>
           </div>
         </div>
-      )),
-    };
-  },
-  head: () => ({
-    meta: [
-      { title: "Réserver une table · Indian Coffee" },
-      {
-        name: "description",
-        content:
-          "Demandez une réservation chez Indian Coffee à Savigny-le-Temple.",
-      },
-    ],
-  }),
-  component: ({ shell }) => (
-    <CompositeComponent
-      ClockIcon={(props) => <Clock3Icon {...props} />}
-      Form={() => <ReservationForm />}
-      MailIcon={(props) => <MailIcon {...props} />}
-      MapPinIcon={(props) => <MapPinIcon {...props} />}
-      PhoneIcon={(props) => <PhoneIcon {...props} />}
-      src={shell}
-    />
+      </Section>
+    </>
   ),
 });

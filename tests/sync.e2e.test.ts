@@ -60,7 +60,7 @@ test("PostgreSQL sync replays one mutation and rejects a different payload", asy
 
   const first = await getApi().api.reservations.post(
     reservation,
-    requestOptions,
+    requestOptions
   );
   expect(first.status).toBe(201);
   const firstPayload = unwrapApiResult(first);
@@ -80,21 +80,21 @@ test("PostgreSQL sync replays one mutation and rejects a different payload", asy
       change.invalidations.some(
         (invalidation) =>
           invalidation.kind === "tags" &&
-          invalidation.tags?.includes("reservations"),
-      ),
-    ),
+          invalidation.tags?.includes("reservations")
+      )
+    )
   ).toBe(true);
 
   const replay = await getApi().api.reservations.post(
     reservation,
-    requestOptions,
+    requestOptions
   );
   expect(replay.status).toBe(201);
   expect(unwrapApiResult(replay).reservation.id).toBe(reservationId);
 
   const conflict = await getApi().api.reservations.post(
     { ...reservation, partySize: 3 },
-    requestOptions,
+    requestOptions
   );
   const conflictValue = conflict.error?.value as { code?: string } | undefined;
   expect(conflict.status).toBe(409);

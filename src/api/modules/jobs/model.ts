@@ -1,10 +1,10 @@
 import * as v from "valibot";
 
 export const EmailJobSchema = v.object({
+  reference: v.string(),
+  reservationId: v.pipe(v.string(), v.uuid()),
   template: v.string(),
   to: v.pipe(v.string(), v.email()),
-  reservationId: v.pipe(v.string(), v.uuid()),
-  reference: v.string(),
 });
 
 export const MediaDeleteJobSchema = v.object({

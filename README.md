@@ -57,7 +57,11 @@ src/
   db/                    # Drizzle schemas and migrations
 ```
 
-Public routes include `/`, `/menu`, `/gallery`, `/contact`, and `/privacy`. Administration routes include `/admin`, `/admin/menu`, `/admin/gallery`, `/admin/content`, `/admin/hours`, `/admin/reservations`, and `/admin/users`.
+Public routes include `/`, `/menu`, `/menu/:slug`, `/gallery`, `/contact`, `/legal`, and `/privacy`, plus `/sitemap.xml` and `/robots.txt`. Administration routes include `/admin`, `/admin/menu`, `/admin/menu/:id`, `/admin/gallery`, `/admin/content`, `/admin/hours`, `/admin/reservations`, `/admin/reservations/:id`, `/admin/users`, and `/admin/forbidden`.
+
+Two back-office roles share one permission matrix, defined in [src/api/lib/permissions.ts](./src/api/lib/permissions.ts) and enforced both by the Elysia macros and by the page guards. `admin` has every permission; `editor` — the dining-room role — manages the menu, gallery, content, hours, and reservations, but never accounts. Any other role, including the `customer` role a social sign-in creates, lands on `/admin/forbidden` rather than a bare 403.
+
+Opening hours are the single source of truth for the public "open now" badge, the `Restaurant` structured data, and reservation validation: [src/api/modules/content/opening-hours.service.ts](./src/api/modules/content/opening-hours.service.ts) resolves the weekly grid against exceptional closures, and the reservation service derives its bookable slots from it. Editing the hours in the back office therefore changes which reservations are accepted.
 
 ## Database
 
@@ -77,7 +81,9 @@ bun run bootstrap:admin
 
 Deployments must run Drizzle migrations first, then `bun run db:migrate:furin`, and only then start the server. The Furin migration owns its internal `furin_sync` schema, is idempotent, and is never run automatically by the application.
 
-The seed preserves all 215 historical menu entries and 40 existing images in PostgreSQL. It is safe to rerun: categories are updated by slug, and their contents are recreated in a transaction.
+The seed preserves all 215 historical menu entries and 40 existing images in PostgreSQL. It is safe to rerun: categories are updated by slug, their contents are recreated in a transaction, and the seven-day opening grid is filled in without overwriting hours already adjusted in the back office.
+
+Migration `0001` normalises the legacy opening hours. Earlier rows only existed for days 1, 5 and 7, with the covered range encoded in the label (« Lundi — Jeudi »); the migration carries the last defined day forward so that the seven days are all present, then clears those labels, which now denote a service (« Midi », « Soir ») rather than a range of days. Without that step Tuesday, Wednesday, Thursday and Saturday would silently read as closed and reservations on those days would be refused.
 
 ## Quality and delivery
 
@@ -90,7 +96,7 @@ bun run build
 bun run smoke
 ```
 
-The `furin build --target bun --compile embed` command validates the configured environment while producing a standalone Bun binary with separate `client/` and `client-admin/` bundles. The smoke test runs against the configured database and verifies public rendering, the administration login, unauthenticated redirects, the public not-found boundary, English route paths, and bundle isolation.
+The `furin build --target bun --compile embed` command validates the configured environment while producing a standalone Bun binary with separate `client/` and `client-admin/` bundles. The smoke test runs against the configured database and verifies public rendering, the administration login, unauthenticated redirects, the public not-found boundary, English route paths, bundle isolation, the legal pages, the sitemap and robots files, the `Restaurant` structured data, the absence of any administration link on public pages, and that `/api/auth/*` reaches Better Auth rather than the page catch-all.
 
 Public pages use tagged ISR with a five-minute TTL. Administration pages remain uncached SSR, and replayable mutations use Furin's durable PostgreSQL sync runtime.
 

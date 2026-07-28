@@ -48,5 +48,5 @@ for (const peer of peers) {
 }
 
 console.log(
-  "Furin et ses peer dependencies utilisent désormais Indian Coffee.",
+  "Furin et ses peer dependencies utilisent désormais Indian Coffee."
 );

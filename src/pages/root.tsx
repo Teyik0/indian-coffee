@@ -18,14 +18,17 @@ export const route = createRoute({
       footer: await renderServerComponent(<PublicFooter content={content} />),
     };
   },
-  layout: ({ children, footer }) => (
-    <TooltipProvider>
-      <div className="isolate min-h-screen">
-        <PublicHeader />
-        <main>{children}</main>
-        {footer}
-      </div>
-      <Toaster position="top-right" />
-    </TooltipProvider>
+  layout: ({ children, footer, openState, phone }) => (
+    <>
+      <script>{'document.documentElement.lang="fr";'}</script>
+      <TooltipProvider>
+        <div className="maison-madras isolate min-h-screen">
+          <PublicHeader openState={openState} phone={phone} />
+          <main id="contenu">{children}</main>
+          {footer}
+        </div>
+        <Toaster position="top-right" />
+      </TooltipProvider>
+    </>
   ),
 });

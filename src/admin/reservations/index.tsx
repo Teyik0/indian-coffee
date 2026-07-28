@@ -1,7 +1,5 @@
-// biome-ignore-all lint/performance/noJsxPropsBind: Furin composite slots are component factories
-import { CompositeComponent } from "@teyik0/furin/rsc";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
-import { createAdminPageShell } from "@/components/admin/admin-page-rsc";
+import { AdminPage } from "@/components/admin/page-shell";
 import { ReservationManager } from "@/components/admin/reservation-manager";
 import { getApi, unwrapApiResult } from "@/lib/api-client";
 import { route } from "../root";
@@ -9,18 +7,33 @@ import { route } from "../root";
 export default route.page({
   loader: async ({ request, redirect }) => {
     await requireBackOfficeSession(request, redirect, "reservations:write");
-    const reservations = unwrapApiResult(
-      await getApi().api.admin.reservations.get({ headers: request.headers }),
+    // Les demandes à confirmer sont triées par échéance croissante : on traite
+    // d'abord ce qui arrive le plus tôt.
+    const result = unwrapApiResult(
+      await getApi().api.admin.reservations.get({
+        headers: request.headers,
+        query: {
+          order: "asc",
+          page: 1,
+          pageSize: 25,
+          status: ["PENDING"],
+        },
+      })
     );
-    return {
-      reservations,
-      shell: await createAdminPageShell("Demandes à confirmer", "Réservations"),
-    };
+    return { result };
   },
-  component: ({ reservations, shell }) => (
-    <CompositeComponent
-      src={shell}
-      Content={() => <ReservationManager initialReservations={reservations} />}
-    />
+  component: ({ result }) => (
+    <AdminPage
+      description="Confirmez ou refusez les demandes. Chaque décision envoie un courriel au client et reste tracée dans le journal."
+      title="Réservations"
+    >
+      <ReservationManager initialResult={result} />
+    </AdminPage>
   ),
+  head: () => ({
+    meta: [
+      { title: "Réservations · Administration Indian Coffee" },
+      { content: "noindex, nofollow", name: "robots" },
+    ],
+  }),
 });

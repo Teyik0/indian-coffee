@@ -1,13 +1,7 @@
-import { renderServerComponent } from "@teyik0/furin/rsc";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AdminPage } from "@/components/admin/page-shell";
+import { UsersManager } from "@/components/admin/users-manager";
+import { getApi, unwrapApiResult } from "@/lib/api-client";
 import { route } from "../root";
 
 export default route.page({
@@ -15,27 +9,34 @@ export default route.page({
     const current = await requireBackOfficeSession(
       request,
       redirect,
-      "users:read",
+      "users:read"
     );
-    return {
-      content: await renderServerComponent(
-        <div className="flex flex-col gap-8">
-          <div>
-            <p className="text-muted-foreground">Accès privé au back-office</p>
-            <h1 className="font-display text-4xl">Utilisateurs</h1>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>{current.user.name}</CardTitle>
-              <CardDescription>{current.user.email}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge>{current.user.role}</Badge>
-            </CardContent>
-          </Card>
-        </div>,
-      ),
-    };
+    const [users, pendingAccounts] = await Promise.all([
+      getApi()
+        .api.admin.users.get({ headers: request.headers })
+        .then(unwrapApiResult),
+      getApi()
+        .api.admin.users.pending.get({ headers: request.headers })
+        .then(unwrapApiResult),
+    ]);
+    return { currentUserId: current.user.id, pendingAccounts, users };
   },
-  component: ({ content }) => content,
+  component: ({ users, pendingAccounts, currentUserId }) => (
+    <AdminPage
+      description="Les administrateurs gèrent tout ; l’équipe de salle gère la carte, les réservations, les horaires et le contenu, mais pas les comptes."
+      title="Utilisateurs"
+    >
+      <UsersManager
+        currentUserId={currentUserId}
+        initialUsers={users}
+        pendingAccounts={pendingAccounts}
+      />
+    </AdminPage>
+  ),
+  head: () => ({
+    meta: [
+      { title: "Utilisateurs · Administration Indian Coffee" },
+      { content: "noindex, nofollow", name: "robots" },
+    ],
+  }),
 });

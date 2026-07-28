@@ -5,10 +5,10 @@ export const MediaUploadSchema = v.object({
   file: v.file("Sélectionnez une image valide."),
 });
 
-export type MediaVariant = {
+export interface MediaVariant {
+  bytes: number;
+  height: number;
   key: string;
   url: string;
   width: number;
-  height: number;
-  bytes: number;
-};
+}

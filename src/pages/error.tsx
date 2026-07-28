@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export default function PublicError({ error, reset }: ErrorProps) {
   return (
     <section className="mx-auto flex min-h-[65vh] max-w-3xl flex-col items-center justify-center px-5 text-center">
-      <p className="font-semibold uppercase tracking-[0.22em] text-primary text-xs">
+      <p className="font-semibold text-primary text-xs uppercase tracking-[0.22em]">
         Incident {error.digest}
       </p>
       <h1 className="mt-4 font-display text-6xl">

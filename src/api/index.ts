@@ -4,17 +4,17 @@ import { Elysia } from "elysia";
 import { sync } from "@/sync";
 import { contentRouter } from "./modules/content";
 import { contentService } from "./modules/content/service";
-import { galleryRouter } from "./modules/gallery";
-import { galleryService } from "./modules/gallery/service";
+import { dashboardService } from "./modules/dashboard/service";
+import { adminGalleryRouter, galleryRouter } from "./modules/gallery";
 import { jobsRouter } from "./modules/jobs";
 import { mediaRouter } from "./modules/media";
 import { adminMenuRouter, publicMenuRouter } from "./modules/menu";
-import { menuService } from "./modules/menu/service";
 import {
   adminReservationRouter,
   publicReservationRouter,
 } from "./modules/reservations";
-import { reservationService } from "./modules/reservations/service";
+import { seoRouter } from "./modules/seo";
+import { adminUsersRouter } from "./modules/users";
 import { betterAuthPlugin } from "./plugins/better-auth.plugin";
 import { errorPlugin } from "./plugins/error.plugin";
 
@@ -27,46 +27,32 @@ export const apiPlugin = new Elysia({ name: "indian-coffee-api" })
     "/api/admin/session",
     ({ user }) => ({
       user: {
+        email: user.email,
         id: user.id,
         name: user.name,
-        email: user.email,
         role: user.role,
       },
     }),
-    { onlyAdmin: true },
+    { onlyAdmin: true }
   )
-  .get(
-    "/api/admin/dashboard",
-    async () => {
-      const [menu, reservations] = await Promise.all([
-        menuService.getPublic({}),
-        reservationService.list(),
-      ]);
-      const items = menu.flatMap((category) =>
-        category.sections.flatMap((section) => section.items),
-      );
-      return {
-        stats: {
-          dishes: items.length,
-          unavailable: items.filter((item) => item.status === "UNAVAILABLE")
-            .length,
-          pending: reservations.filter(
-            (reservation) => reservation.status === "PENDING",
-          ).length,
-          reservations: reservations.length,
-        },
-      };
-    },
-    { onlyAdmin: true },
-  )
-  .get("/api/admin/gallery", () => galleryService.getPage(1), {
+  // Agrégats calculés en base : la version précédente chargeait la carte
+  // entière et toutes les réservations pour en déduire quatre compteurs.
+  .get("/api/admin/dashboard", () => dashboardService.get(), {
     onlyAdmin: true,
   })
+  .get(
+    "/api/admin/dashboard/unavailable",
+    () => dashboardService.getUnavailableItems(),
+    { onlyAdmin: true }
+  )
   .use(publicMenuRouter)
   .use(galleryRouter)
   .use(publicReservationRouter)
+  .use(seoRouter)
   .use(adminMenuRouter)
+  .use(adminGalleryRouter)
   .use(adminReservationRouter)
+  .use(adminUsersRouter)
   .use(contentRouter)
   .use(mediaRouter)
   .use(jobsRouter)

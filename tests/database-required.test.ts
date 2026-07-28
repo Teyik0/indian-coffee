@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 test("the server refuses to start without DATABASE_URL in development", async () => {
   const runtimeEnv = { ...process.env };
-  delete runtimeEnv.DATABASE_URL;
+  runtimeEnv.DATABASE_URL = undefined;
   runtimeEnv.NODE_ENV = "development";
 
   const server = Bun.spawn(
@@ -10,9 +10,9 @@ test("the server refuses to start without DATABASE_URL in development", async ()
     {
       cwd: process.cwd(),
       env: runtimeEnv,
-      stdout: "pipe",
       stderr: "pipe",
-    },
+      stdout: "pipe",
+    }
   );
 
   const [exitCode, stdout, stderr] = await Promise.all([

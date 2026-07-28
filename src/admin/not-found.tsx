@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export default function AdminNotFound({ error }: NotFoundProps) {
   return (
     <section className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <p className="font-semibold uppercase tracking-[0.2em] text-primary text-xs">
+      <p className="font-semibold text-primary text-xs uppercase tracking-[0.2em]">
         404 · Administration
       </p>
       <h1 className="mt-4 font-display text-5xl">Écran introuvable</h1>

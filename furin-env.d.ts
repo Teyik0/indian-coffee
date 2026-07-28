@@ -8,9 +8,11 @@ declare module "@teyik0/furin/link" {
     [key: `/${string}`]: { search?: never; searchInput?: never };
     "/contact": { search?: never; searchInput?: never };
     "/gallery": { search?: never; searchInput?: never };
+    "/legal": { search?: never; searchInput?: never };
     "/menu": { search?: never; searchInput?: never };
     [key: `/menu/${string}`]: { search?: never; searchInput?: never };
     "/privacy": { search?: never; searchInput?: never };
+    "/visuals": { search?: never; searchInput?: never };
   }
 }
 
@@ -19,5 +21,6 @@ declare module "@teyik0/furin" {
     content: 'content';
     gallery: 'gallery';
     menu: 'menu';
+    reservations: 'reservations';
   }
 }

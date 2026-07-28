@@ -43,12 +43,38 @@
   --color-saffron: var(--saffron);
   --color-tamarind: var(--tamarind);
   --color-leaf: var(--leaf);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
+
+  /* Échelle typographique fluide : une seule source pour les deux applications,
+     au lieu de tailles arbitraires répétées page par page. */
+  --text-display: clamp(2.75rem, 1.6rem + 5.2vw, 6rem);
+  --text-display--line-height: 0.94;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: clamp(2rem, 1.4rem + 2.4vw, 3.25rem);
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.015em;
+  --text-heading: clamp(1.5rem, 1.2rem + 1.1vw, 2.125rem);
+  --text-heading--line-height: 1.15;
+  --text-lead: clamp(1.0625rem, 1rem + 0.35vw, 1.3125rem);
+  --text-lead--line-height: 1.6;
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--letter-spacing: 0.22em;
+
+  --shadow-card:
+    0 1px 2px oklch(0.3 0.04 50 / 6%), 0 8px 24px -12px oklch(0.3 0.04 50 / 14%);
+  --shadow-lift:
+    0 2px 4px oklch(0.3 0.04 50 / 8%),
+    0 24px 48px -20px oklch(0.3 0.04 50 / 26%);
+  --shadow-panel: 0 40px 80px -48px oklch(0.25 0.05 45 / 45%);
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
@@ -74,6 +100,8 @@
   --saffron: oklch(0.72 0.16 73);
   --tamarind: oklch(0.42 0.105 43);
   --leaf: oklch(0.43 0.095 132);
+  --paper: oklch(0.974 0.018 83);
+  --ink: oklch(0.226 0.026 52);
   --sidebar: oklch(0.305 0.044 52);
   --sidebar-foreground: oklch(0.955 0.025 85);
   --sidebar-primary: oklch(0.77 0.15 75);
@@ -84,22 +112,190 @@
   --sidebar-ring: oklch(0.77 0.15 75);
 }
 
+/**
+ * Maison de Madras — identité du site public.
+ *
+ * Le thème reste porté par les jetons sémantiques de shadcn : les composants
+ * interactifs gardent donc leurs états, leurs contrastes et leur cohérence,
+ * tandis que l'administration conserve son propre thème.
+ */
+.maison-madras,
+.maison-madras-overlay {
+  --radius: 0.35rem;
+  --background: #f4ead7;
+  --foreground: #071d2d;
+  --card: #fbf5e9;
+  --card-foreground: #071d2d;
+  --popover: #fffaf0;
+  --popover-foreground: #071d2d;
+  --primary: #e36e3d;
+  --primary-foreground: #071d2d;
+  --secondary: #dce2dd;
+  --secondary-foreground: #071d2d;
+  --muted: #e9dfcd;
+  --muted-foreground: #59656b;
+  --accent: #e36e3d;
+  --accent-foreground: #071d2d;
+  --destructive: #b83d2b;
+  --border: #c9bdab;
+  --input: #bcae9a;
+  --ring: #e36e3d;
+  --saffron: #e36e3d;
+  --tamarind: #071d2d;
+  --leaf: #44725f;
+  --paper: #f4ead7;
+  --ink: #071d2d;
+
+  --shadow-card:
+    0 1px 1px rgb(7 29 45 / 5%), 0 12px 28px -22px rgb(7 29 45 / 30%);
+  --shadow-lift:
+    0 2px 2px rgb(7 29 45 / 8%), 0 30px 64px -28px rgb(7 29 45 / 38%);
+  --shadow-panel: 0 36px 80px -42px rgb(7 29 45 / 48%);
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/**
+ * Le thème déclarait `@custom-variant dark` et tous les variants `dark:` de
+ * shadcn sans jamais définir le bloc correspondant : la classe `.dark` était
+ * inopérante. Papier tamarind profond, accents saffron conservés.
+ */
+.dark {
+  --background: oklch(0.185 0.021 48);
+  --foreground: oklch(0.945 0.017 84);
+  --card: oklch(0.235 0.026 48);
+  --card-foreground: oklch(0.945 0.017 84);
+  --popover: oklch(0.245 0.027 48);
+  --popover-foreground: oklch(0.945 0.017 84);
+  --primary: oklch(0.79 0.148 74);
+  --primary-foreground: oklch(0.215 0.035 48);
+  --secondary: oklch(0.305 0.038 52);
+  --secondary-foreground: oklch(0.945 0.02 84);
+  --muted: oklch(0.278 0.03 50);
+  --muted-foreground: oklch(0.755 0.028 78);
+  --accent: oklch(0.355 0.055 55);
+  --accent-foreground: oklch(0.955 0.02 85);
+  --destructive: oklch(0.68 0.19 25);
+  --border: oklch(0.365 0.032 52 / 70%);
+  --input: oklch(0.365 0.032 52 / 70%);
+  --ring: oklch(0.72 0.14 70);
+  --saffron: oklch(0.79 0.15 74);
+  --tamarind: oklch(0.3 0.062 42);
+  --leaf: oklch(0.66 0.115 135);
+  --paper: oklch(0.185 0.021 48);
+  --ink: oklch(0.945 0.017 84);
+  --sidebar: oklch(0.155 0.019 46);
+  --sidebar-foreground: oklch(0.925 0.02 84);
+  --sidebar-primary: oklch(0.79 0.148 74);
+  --sidebar-primary-foreground: oklch(0.185 0.03 46);
+  --sidebar-accent: oklch(0.265 0.031 50);
+  --sidebar-accent-foreground: oklch(0.955 0.02 85);
+  --sidebar-border: oklch(0.35 0.03 52 / 60%);
+  --sidebar-ring: oklch(0.79 0.148 74);
+
+  --shadow-card:
+    0 1px 2px oklch(0 0 0 / 40%), 0 8px 24px -12px oklch(0 0 0 / 55%);
+  --shadow-lift:
+    0 2px 4px oklch(0 0 0 / 45%), 0 24px 48px -20px oklch(0 0 0 / 65%);
+  --shadow-panel: 0 40px 80px -48px oklch(0 0 0 / 70%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
 
   html {
+    scroll-padding-top: 6rem;
     @apply scroll-smooth font-sans;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
     min-height: 100vh;
     margin: 0;
+    @apply bg-background text-foreground antialiased;
   }
 
   ::selection {
     background: color-mix(in oklch, var(--saffron) 45%, transparent);
+  }
+
+  /**
+   * Fraunces expose les axes SOFT et WONK : les titres gagnent des terminaisons
+   * arrondies et un « g » à queue ouverte. C'est ce qui distingue la fonte d'un
+   * serif éditorial générique.
+   */
+  .font-display,
+  .font-heading {
+    font-variation-settings:
+      "SOFT" 60,
+      "WONK" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@utility text-display {
+  font-size: var(--text-display);
+  line-height: var(--text-display--line-height);
+  letter-spacing: var(--text-display--letter-spacing);
+}
+
+@utility text-title {
+  font-size: var(--text-title);
+  line-height: var(--text-title--line-height);
+  letter-spacing: var(--text-title--letter-spacing);
+}
+
+@utility text-heading {
+  font-size: var(--text-heading);
+  line-height: var(--text-heading--line-height);
+}
+
+@utility text-lead {
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+}
+
+/** Surtitre : la même déclinaison était recopiée sur chaque page. */
+@utility eyebrow {
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--text-eyebrow--letter-spacing);
+}
+
+/** Prix et compteurs alignés en colonne. */
+@utility numeric {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/**
+ * Grain partagé par tous les panneaux sombres. La règle vivait uniquement dans
+ * `hero-grain`, donc un seul bloc en bénéficiait.
+ */
+@utility grain {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    opacity: 0.16;
   }
 }

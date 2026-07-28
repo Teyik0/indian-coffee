@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { sqlClient } from "@/api/lib/db";
 
 const migrationPath = fileURLToPath(
-  import.meta.resolve("@teyik0/furin/sync/postgres/migration.sql"),
+  import.meta.resolve("@teyik0/furin/sync/postgres/migration.sql")
 );
 const migration = await Bun.file(migrationPath).text();
 

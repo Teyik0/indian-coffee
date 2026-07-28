@@ -5,12 +5,27 @@ import { schema } from "@/db/schema";
 import { env } from "./env";
 
 export const sqlClient = new SQL(env.DATABASE_URL, {
-  max: 5,
-  idleTimeout: 20,
   connectionTimeout: 10,
+  idleTimeout: 20,
+  max: 5,
 });
 
 export const db = drizzle({ client: sqlClient, schema });
+
+export type { SQL as DrizzleSQL } from "drizzle-orm";
+export {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 
 export async function assertDatabaseReady() {
   const rows = await sqlClient`
@@ -23,9 +38,7 @@ export async function assertDatabaseReady() {
     | undefined;
   if (!(readiness?.settings && readiness.home)) {
     throw new Error(
-      "La base est migrée mais son contenu obligatoire est absent. Exécutez le seed.",
+      "La base est migrée mais son contenu obligatoire est absent. Exécutez le seed."
     );
   }
 }
-
-export { and, asc, eq, inArray, lte, sql } from "drizzle-orm";

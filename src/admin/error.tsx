@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export default function AdminError({ error, reset }: ErrorProps) {
   return (
     <section className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <p className="font-semibold uppercase tracking-[0.2em] text-destructive text-xs">
+      <p className="font-semibold text-destructive text-xs uppercase tracking-[0.2em]">
         Incident {error.digest}
       </p>
       <h1 className="mt-4 font-display text-5xl">
