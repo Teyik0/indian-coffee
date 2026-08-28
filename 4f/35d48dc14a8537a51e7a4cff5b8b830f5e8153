@@ -1,0 +1,23 @@
+Dockerfile.vercel
+  s_8291b27c54be52::t_81e9b676ee30cd 12
+package.json
+  s_8291b27c54be52::t_fd70d090516c07 10
+vercel.json
+  s_8291b27c54be52::t_fd70d090516c07 2-10,12-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4f35d48dc14a8537a51e7a4cff5b8b830f5e8153",
+  "prompts": {},
+  "sessions": {
+    "s_8291b27c54be52": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a049c9-f8d8-7162-b6a7-c38d2c8c7f8a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "teyik0 <teyik0.fr@icloud.com>"
+    }
+  }
+}
