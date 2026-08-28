@@ -7,7 +7,7 @@
     "bun": ">=1.4.0"
   },
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then lefthook install; fi",
     "fix": "ultracite fix",
     "dev": "bun --hot src/server.ts",
     "build": "furin build --target bun --compile embed",

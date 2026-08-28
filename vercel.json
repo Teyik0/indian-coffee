@@ -1,8 +1,18 @@
 {
-  "crons": [
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "entrypoint": "Dockerfile.vercel",
+      "runtime": "container"
+    }
+  },
+  "rewrites": [
     {
-      "path": "/internal/jobs/drain",
-      "schedule": "*/5 * * * *"
+      "source": "/(.*)",
+      "destination": {
+        "service": "app"
+      }
     }
   ]
 }
