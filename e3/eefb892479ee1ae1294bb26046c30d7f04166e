@@ -1,0 +1,19 @@
+Dockerfile.vercel
+  s_8291b27c54be52::t_92b5d7e2808b1d 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e3eefb892479ee1ae1294bb26046c30d7f04166e",
+  "prompts": {},
+  "sessions": {
+    "s_8291b27c54be52": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a049c9-f8d8-7162-b6a7-c38d2c8c7f8a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "teyik0 <teyik0.fr@icloud.com>"
+    }
+  }
+}
