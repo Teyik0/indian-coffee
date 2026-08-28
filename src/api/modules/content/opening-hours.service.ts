@@ -115,13 +115,17 @@ function buildWeek(rows: (typeof openingHours.$inferSelect)[]): ResolvedDay[] {
     const dayRows = rows
       .filter((row) => row.dayOfWeek === isoDay)
       .sort((left, right) => left.sortOrder - right.sortOrder);
-    const ranges = dayRows
-      .filter((row) => !row.isClosed && row.opensAt && row.closesAt)
-      .map((row) => ({
-        closesAt: timeToMinutes(row.closesAt as string),
-        label: row.label,
-        opensAt: timeToMinutes(row.opensAt as string),
-      }));
+    const ranges = dayRows.flatMap((row) =>
+      !row.isClosed && row.opensAt && row.closesAt
+        ? [
+            {
+              closesAt: timeToMinutes(row.closesAt),
+              label: row.label,
+              opensAt: timeToMinutes(row.opensAt),
+            },
+          ]
+        : []
+    );
     return {
       dayName: weekdayName(isoDay),
       exception: null,

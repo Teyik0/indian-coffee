@@ -1,4 +1,6 @@
 import { Elysia } from "elysia";
+import { MenuService } from "@/api/effect/domain-services";
+import { runApiService } from "@/api/effect/runtime";
 import { betterAuthPlugin } from "@/api/plugins/better-auth.plugin";
 import {
   MenuCategoryCreateSchema,
@@ -12,14 +14,22 @@ import {
   MenuSectionUpdateSchema,
   UpdateMenuStatusSchema,
 } from "./model";
-import { menuService } from "./service";
 
 export const publicMenuRouter = new Elysia({
   name: "public-menu",
   prefix: "/api/menu",
-}).get("/", ({ query }) => menuService.getPublic(query), {
-  query: MenuQuerySchema,
-});
+}).get(
+  "/",
+  ({ query, request }) =>
+    runApiService(
+      MenuService,
+      (service) => service.getPublic(query),
+      request.signal
+    ),
+  {
+    query: MenuQuerySchema,
+  }
+);
 
 /** Toute mutation de la carte invalide le tag `menu` consommé par l'ISR public. */
 const invalidateMenu = { invalidate: { tags: ["menu"] } } as const;
@@ -30,16 +40,39 @@ export const adminMenuRouter = new Elysia({
 })
   .use(betterAuthPlugin)
   // `getAdmin` et non `getPublic` : le back-office doit voir les plats masqués.
-  .get("/", () => menuService.getAdmin(), { onlyAdmin: true })
+  .get(
+    "/",
+    ({ request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.getAdmin(),
+        request.signal
+      ),
+    { onlyAdmin: true }
+  )
 
-  .post("/categories", ({ body }) => menuService.createCategory(body), {
-    body: MenuCategoryCreateSchema,
-    onlyAdmin: true,
-    sync: invalidateMenu,
-  })
+  .post(
+    "/categories",
+    ({ body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.createCategory(body),
+        request.signal
+      ),
+    {
+      body: MenuCategoryCreateSchema,
+      onlyAdmin: true,
+      sync: invalidateMenu,
+    }
+  )
   .patch(
     "/categories/:id",
-    ({ params, body }) => menuService.updateCategory(params.id, body),
+    ({ params, body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.updateCategory(params.id, body),
+        request.signal
+      ),
     {
       body: MenuCategoryUpdateSchema,
       onlyAdmin: true,
@@ -49,7 +82,12 @@ export const adminMenuRouter = new Elysia({
   )
   .delete(
     "/categories/:id",
-    ({ params }) => menuService.deleteCategory(params.id),
+    ({ params, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.deleteCategory(params.id),
+        request.signal
+      ),
     {
       onlyAdmin: true,
       params: MenuParamsSchema,
@@ -57,14 +95,28 @@ export const adminMenuRouter = new Elysia({
     }
   )
 
-  .post("/sections", ({ body }) => menuService.createSection(body), {
-    body: MenuSectionCreateSchema,
-    onlyAdmin: true,
-    sync: invalidateMenu,
-  })
+  .post(
+    "/sections",
+    ({ body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.createSection(body),
+        request.signal
+      ),
+    {
+      body: MenuSectionCreateSchema,
+      onlyAdmin: true,
+      sync: invalidateMenu,
+    }
+  )
   .patch(
     "/sections/:id",
-    ({ params, body }) => menuService.updateSection(params.id, body),
+    ({ params, body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.updateSection(params.id, body),
+        request.signal
+      ),
     {
       body: MenuSectionUpdateSchema,
       onlyAdmin: true,
@@ -74,7 +126,12 @@ export const adminMenuRouter = new Elysia({
   )
   .delete(
     "/sections/:id",
-    ({ params }) => menuService.deleteSection(params.id),
+    ({ params, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.deleteSection(params.id),
+        request.signal
+      ),
     {
       onlyAdmin: true,
       params: MenuParamsSchema,
@@ -82,14 +139,28 @@ export const adminMenuRouter = new Elysia({
     }
   )
 
-  .post("/items", ({ body }) => menuService.createItem(body), {
-    body: MenuItemCreateSchema,
-    onlyAdmin: true,
-    sync: invalidateMenu,
-  })
+  .post(
+    "/items",
+    ({ body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.createItem(body),
+        request.signal
+      ),
+    {
+      body: MenuItemCreateSchema,
+      onlyAdmin: true,
+      sync: invalidateMenu,
+    }
+  )
   .patch(
     "/items/:id",
-    ({ params, body }) => menuService.updateItem(params.id, body),
+    ({ params, body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.updateItem(params.id, body),
+        request.signal
+      ),
     {
       body: MenuItemUpdateSchema,
       onlyAdmin: true,
@@ -99,7 +170,12 @@ export const adminMenuRouter = new Elysia({
   )
   .patch(
     "/items/:id/status",
-    ({ params, body }) => menuService.updateStatus(params.id, body),
+    ({ params, body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.updateStatus(params.id, body),
+        request.signal
+      ),
     {
       body: UpdateMenuStatusSchema,
       onlyAdmin: true,
@@ -109,8 +185,12 @@ export const adminMenuRouter = new Elysia({
   )
   .delete(
     "/items/:id",
-    async ({ params }) => {
-      const [row] = await menuService.deleteItems([params.id]);
+    async ({ params, request }) => {
+      const [row] = await runApiService(
+        MenuService,
+        (service) => service.deleteItems([params.id]),
+        request.signal
+      );
       return row ?? { id: params.id };
     },
     {
@@ -120,8 +200,17 @@ export const adminMenuRouter = new Elysia({
     }
   )
 
-  .patch("/reorder", ({ body }) => menuService.reorder(body), {
-    body: MenuReorderSchema,
-    onlyAdmin: true,
-    sync: invalidateMenu,
-  });
+  .patch(
+    "/reorder",
+    ({ body, request }) =>
+      runApiService(
+        MenuService,
+        (service) => service.reorder(body),
+        request.signal
+      ),
+    {
+      body: MenuReorderSchema,
+      onlyAdmin: true,
+      sync: invalidateMenu,
+    }
+  );

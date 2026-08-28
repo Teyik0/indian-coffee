@@ -1,10 +1,11 @@
+import * as Effect from "effect4/Effect";
 import { Elysia } from "elysia";
-import { DomainError } from "@/api/modules/shared";
+import { InternalApiError, isDomainError } from "@/api/effect/errors";
 
 export const errorPlugin = new Elysia({ name: "domain-errors" }).onError(
   { as: "global" },
   ({ code, error, status }) => {
-    if (error instanceof DomainError) {
+    if (isDomainError(error)) {
       return status(error.status, {
         code: error.code,
         fieldErrors: error.fieldErrors,
@@ -28,12 +29,15 @@ export const errorPlugin = new Elysia({ name: "domain-errors" }).onError(
       return;
     }
 
-    const cause =
-      error instanceof Error ? error : new Error("Unknown request error");
-    console.error("request_failed", {
-      message: cause.message,
-      name: cause.name,
-    });
+    if (!(error instanceof InternalApiError)) {
+      const cause =
+        error instanceof Error ? error : new Error("Unknown request error");
+      Effect.runSync(
+        Effect.logError("request_failed").pipe(
+          Effect.annotateLogs({ message: cause.message, name: cause.name })
+        )
+      );
+    }
 
     return status(500, {
       code: "INTERNAL_ERROR",

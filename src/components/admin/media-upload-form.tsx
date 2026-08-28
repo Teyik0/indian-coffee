@@ -4,10 +4,11 @@ import {
   type SubmitHandler,
   useForm,
 } from "@formisch/react";
+import * as Effect from "effect4/Effect";
 import { ImageUpIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MediaUploadSchema } from "@/api/modules/media/model";
+import * as v from "valibot";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -20,46 +21,88 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { api, apiErrorMessage } from "@/lib/api-client";
 
+const MediaUploadFormSchema = v.object({
+  alt: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(3, "La description contient au moins 3 caractères."),
+    v.maxLength(180, "La description contient au maximum 180 caractères.")
+  ),
+  file: v.pipe(
+    v.file("Sélectionnez une image valide."),
+    v.mimeType(
+      ["image/jpeg", "image/png", "image/webp", "image/avif"],
+      "Format d’image non pris en charge."
+    ),
+    v.maxSize(15 * 1024 * 1024, "L’image ne doit pas dépasser 15 Mo.")
+  ),
+});
+
 export function MediaUploadForm() {
   const [pending, setPending] = useState(false);
   const form = useForm({
     initialInput: { alt: "" },
-    schema: MediaUploadSchema,
+    schema: MediaUploadFormSchema,
   });
 
-  const submit: SubmitHandler<typeof MediaUploadSchema> = async (output) => {
+  const submit: SubmitHandler<typeof MediaUploadFormSchema> = (output) => {
     setPending(true);
-    const { data, error } = await api.api.admin.media.post(output);
-    if (error || !data) {
-      setPending(false);
-      toast.error("Upload impossible", {
-        description: apiErrorMessage(error, "L’image n’a pas pu être envoyée."),
-      });
-      return;
-    }
 
-    // L'upload ne créait que le média : l'image n'entrait jamais dans la
-    // galerie et restait donc invisible partout.
-    const entry = await api.api.admin.gallery.post({
-      caption: "",
-      collectionSlug: "restaurant",
-      mediaId: data.id,
-    });
-    setPending(false);
+    const program = Effect.gen(function* () {
+      const { data, error } = yield* Effect.tryPromise(() =>
+        api.api.admin.media.post(output)
+      );
+      if (error || !data) {
+        return {
+          _tag: "UploadFailed" as const,
+          error,
+        };
+      }
 
-    if (entry.error) {
-      toast.warning("Image envoyée, mais non publiée", {
-        description: apiErrorMessage(
-          entry.error,
-          "Ajoutez-la à la galerie depuis la liste."
-        ),
-      });
-      return;
-    }
-
-    toast.success("Image ajoutée à la galerie", {
-      description: "Rechargez la page pour la voir apparaître dans la grille.",
-    });
+      // L'upload ne créait que le média : l'image n'entrait jamais dans la
+      // galerie et restait donc invisible partout.
+      const entry = yield* Effect.tryPromise(() =>
+        api.api.admin.gallery.post({
+          caption: "",
+          collectionSlug: "restaurant",
+          mediaId: data.id,
+        })
+      );
+      return entry.error
+        ? { _tag: "PublishFailed" as const, error: entry.error }
+        : { _tag: "Success" as const };
+    }).pipe(
+      Effect.match({
+        onFailure: () => ({ _tag: "UploadFailed" as const, error: null }),
+        onSuccess: (result) => result,
+      }),
+      Effect.tap((result) =>
+        Effect.sync(() => {
+          setPending(false);
+          if (result._tag === "UploadFailed") {
+            toast.error("Upload impossible", {
+              description: apiErrorMessage(
+                result.error,
+                "L’image n’a pas pu être envoyée."
+              ),
+            });
+          } else if (result._tag === "PublishFailed") {
+            toast.warning("Image envoyée, mais non publiée", {
+              description: apiErrorMessage(
+                result.error,
+                "Ajoutez-la à la galerie depuis la liste."
+              ),
+            });
+          } else {
+            toast.success("Image ajoutée à la galerie", {
+              description:
+                "Rechargez la page pour la voir apparaître dans la grille.",
+            });
+          }
+        })
+      )
+    );
+    Effect.runPromise(program);
   };
 
   return (

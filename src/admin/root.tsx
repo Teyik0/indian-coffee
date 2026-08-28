@@ -1,9 +1,11 @@
 import { createRoute } from "@teyik0/furin/client";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { readThemeCookie } from "@/components/admin/theme-toggle";
+import { PortalScope } from "@/components/ui/portal-scope";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getApi } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import "@/styles/admin.css";
 
 export const route = createRoute({
@@ -38,10 +40,11 @@ export const route = createRoute({
         {/* La classe est posée au rendu serveur d'après le cookie : pas de flash
             clair avant l'hydratation. Le conteneur peint lui-même la surface,
             faute de contrôler la balise `html` depuis une mise en page Furin. */}
-        <div
-          className={`admin-shell min-h-screen bg-background text-foreground${
-            theme === "dark" ? "dark" : ""
-          }`}
+        <PortalScope
+          className={cn(
+            "admin-shell min-h-screen bg-background text-foreground",
+            theme === "dark" && "dark"
+          )}
         >
           {adminUser ? (
             <AdminShell
@@ -54,8 +57,8 @@ export const route = createRoute({
           ) : (
             children
           )}
-        </div>
-        <Toaster position="top-right" />
+          <Toaster position="top-right" />
+        </PortalScope>
       </TooltipProvider>
     </>
   ),

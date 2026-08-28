@@ -1,4 +1,5 @@
 import { createRoute } from "@teyik0/furin/client";
+import * as Effect from "effect4/Effect";
 import { t } from "elysia";
 import { ArrowLeftIcon } from "lucide-react";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
@@ -7,7 +8,12 @@ import { MenuItemForm } from "@/components/admin/menu-item-form";
 import { AdminPage } from "@/components/admin/page-shell";
 import { adminRoutes } from "@/components/admin/routes";
 import { Button } from "@/components/ui/button";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import {
+  ApiClientError,
+  apiEffect,
+  getApi,
+  runLoaderEffect,
+} from "@/lib/api-client";
 import { route as rootRoute } from "../root";
 
 const menuItemRoute = createRoute({
@@ -16,58 +22,75 @@ const menuItemRoute = createRoute({
 });
 
 export default menuItemRoute.page({
-  loader: async ({ request, redirect, params }) => {
-    await requireBackOfficeSession(request, redirect, "menu:write");
-    const { id } = params as { id: string };
-    const [categories, media] = await Promise.all([
-      getApi()
-        .api.admin.menu.get({ headers: request.headers })
-        .then(unwrapApiResult),
-      getApi()
-        .api.admin.gallery.media.get({ headers: request.headers })
-        .then(unwrapApiResult),
-    ]);
+  loader: ({ request, redirect, params }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        yield* requireBackOfficeSession(request, redirect, "menu:write");
+        const { id } = params as { id: string };
+        const { categories, media } = yield* Effect.all(
+          {
+            categories: apiEffect((signal) =>
+              getApi().api.admin.menu.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+            media: apiEffect((signal) =>
+              getApi().api.admin.gallery.media.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+          },
+          { concurrency: "unbounded" }
+        );
 
-    // Parcours en une passe avec sortie anticipée : la carte compte plus de
-    // deux cents plats, inutile de construire des tableaux intermédiaires.
-    let located:
-      | {
-          item: (typeof categories)[number]["sections"][number]["items"][number];
-          categoryName: string;
-          sectionName: string;
+        // Parcours en une passe avec sortie anticipée : la carte compte plus de
+        // deux cents plats, inutile de construire des tableaux intermédiaires.
+        let located:
+          | {
+              item: (typeof categories)[number]["sections"][number]["items"][number];
+              categoryName: string;
+              sectionName: string;
+            }
+          | undefined;
+        for (const category of categories) {
+          for (const section of category.sections) {
+            const item = section.items.find((entry) => entry.id === id);
+            if (item) {
+              located = {
+                categoryName: category.name,
+                item,
+                sectionName: section.name,
+              };
+              break;
+            }
+          }
+          if (located) {
+            break;
+          }
         }
-      | undefined;
-    for (const category of categories) {
-      for (const section of category.sections) {
-        const item = section.items.find((entry) => entry.id === id);
-        if (item) {
-          located = {
-            categoryName: category.name,
-            item,
-            sectionName: section.name,
-          };
-          break;
+
+        // Laisse la frontière « introuvable » de l'application rendre l'écran 404.
+        if (!located) {
+          return yield* new ApiClientError({
+            message: "Ce plat n’existe pas.",
+            status: 404,
+            value: new Response("Ce plat n’existe pas.", { status: 404 }),
+          });
         }
-      }
-      if (located) {
-        break;
-      }
-    }
 
-    // Laisse la frontière « introuvable » de l'application rendre l'écran 404.
-    if (!located) {
-      throw new Response("Ce plat n’existe pas.", { status: 404 });
-    }
-
-    return {
-      ...located,
-      mediaOptions: media.map((asset) => ({
-        alt: asset.alt,
-        id: asset.id,
-        thumbUrl: asset.thumbUrl,
-      })),
-    };
-  },
+        return {
+          ...located,
+          mediaOptions: media.map((asset) => ({
+            alt: asset.alt,
+            id: asset.id,
+            thumbUrl: asset.thumbUrl,
+          })),
+        };
+      }),
+      request.signal
+    ),
   component: ({ item, categoryName, sectionName, mediaOptions }) => (
     <AdminPage
       breadcrumbs={

@@ -1,11 +1,11 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
 import { and, asc, db, eq, lte } from "@/api/lib/db";
 import { env } from "@/api/lib/env";
 import { getResend } from "@/api/lib/resend";
 import { getUploadThing } from "@/api/lib/uploadthing";
 import { reservations } from "@/db/schema/reservations";
 import { outboxJobs } from "@/db/schema/system";
-import { EmailJobSchema, MediaDeleteJobSchema } from "./model";
+import { EmailJobEffectSchema, MediaDeleteJobEffectSchema } from "./model";
 
 function emailCopy(template: string, reference: string) {
   if (template === "reservation-received") {
@@ -34,8 +34,10 @@ function emailCopy(template: string, reference: string) {
 
 async function processJob(job: typeof outboxJobs.$inferSelect) {
   if (job.kind === "MEDIA_DELETE") {
-    const payload = v.parse(MediaDeleteJobSchema, job.payload);
-    const uploadThing = getUploadThing();
+    const payload = Schema.decodeUnknownSync(MediaDeleteJobEffectSchema)(
+      job.payload
+    );
+    const uploadThing = await getUploadThing();
     if (!uploadThing) {
       throw new Error("UploadThing is not configured");
     }
@@ -46,7 +48,7 @@ async function processJob(job: typeof outboxJobs.$inferSelect) {
     return;
   }
 
-  const payload = v.parse(EmailJobSchema, job.payload);
+  const payload = Schema.decodeUnknownSync(EmailJobEffectSchema)(job.payload);
   const resend = getResend();
   if (!resend) {
     throw new Error("Resend is not configured");

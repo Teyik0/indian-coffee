@@ -37,6 +37,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -82,11 +83,7 @@ function getStatusVariant(
  * ni suppression, ni recherche, dans un tableau non paginé de plus de deux
  * cents lignes. Il devient un plan de travail sur la carte.
  */
-export function MenuManager({
-  initialCategories,
-}: {
-  initialCategories: MenuCategoryView[];
-}) {
+function useMenuManager(initialCategories: MenuCategoryView[]) {
   const [categories, setCategories] = useState(initialCategories);
   const [firstCategory] = initialCategories;
   const [activeCategory, setActiveCategory] = useState<string>(
@@ -190,27 +187,30 @@ export function MenuManager({
       return [];
     }
     const term = search.trim().toLocaleLowerCase("fr-FR");
-    return current.sections
-      .flatMap((section) =>
-        section.items.map((item) => ({
-          ...item,
-          categoryId: current.id,
-          categoryName: current.name,
-          sectionId: section.id,
-          sectionName: section.name,
-        }))
-      )
-      .filter((item) => {
+    return current.sections.flatMap((section) =>
+      section.items.flatMap((item) => {
         if (statusFilter !== "ALL" && item.status !== statusFilter) {
-          return false;
+          return [];
         }
-        if (!term) {
-          return true;
+        if (
+          term &&
+          !`${item.name} ${item.description}`
+            .toLocaleLowerCase("fr-FR")
+            .includes(term)
+        ) {
+          return [];
         }
-        return `${item.name} ${item.description}`
-          .toLocaleLowerCase("fr-FR")
-          .includes(term);
-      });
+        return [
+          {
+            ...item,
+            categoryId: current.id,
+            categoryName: current.name,
+            sectionId: section.id,
+            sectionName: section.name,
+          },
+        ];
+      })
+    );
   }, [current, search, statusFilter]);
 
   const columns: Column<FlatItem>[] = [
@@ -339,6 +339,44 @@ export function MenuManager({
     },
   ];
 
+  return {
+    activeCategory,
+    categories,
+    columns,
+    confirmDelete,
+    pendingDelete,
+    rows,
+    search,
+    setActiveCategory,
+    setPendingDelete,
+    setSearch,
+    setStatusFilter,
+    statusFilter,
+  };
+}
+
+export function MenuManager({
+  initialCategories,
+}: {
+  initialCategories: MenuCategoryView[];
+}) {
+  return <MenuManagerView {...useMenuManager(initialCategories)} />;
+}
+
+function MenuManagerView({
+  activeCategory,
+  categories,
+  columns,
+  confirmDelete,
+  pendingDelete,
+  rows,
+  search,
+  setActiveCategory,
+  setPendingDelete,
+  setSearch,
+  setStatusFilter,
+  statusFilter,
+}: ReturnType<typeof useMenuManager>) {
   return (
     <div className="flex flex-col gap-5">
       <Tabs onValueChange={setActiveCategory} value={activeCategory}>
@@ -377,12 +415,14 @@ export function MenuManager({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">Tous les statuts</SelectItem>
-            {STATUS_ORDER.map((status) => (
-              <SelectItem key={status} value={status}>
-                {MENU_STATUS_LABELS[status]}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectItem value="ALL">Tous les statuts</SelectItem>
+              {STATUS_ORDER.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {MENU_STATUS_LABELS[status]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
 

@@ -1,78 +1,78 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import {
+  boundedNumberInput,
+  boundedString,
+  defaulted,
+  mutableArray,
+  standard,
+} from "@/api/effect/schema";
 import { UuidSchema } from "../shared";
 
 /** Tolère chaîne (HTTP) et nombre (appel Eden direct côté serveur). */
-const PageSchema = v.optional(
-  v.pipe(
-    v.union([v.string(), v.number()]),
-    v.transform(Number),
-    v.integer(),
-    v.minValue(1)
-  ),
-  1
-);
+const PageSchema = defaulted(boundedNumberInput(1, Number.MAX_SAFE_INTEGER), 1);
 
-export const GalleryQuerySchema = v.object({
-  collection: v.optional(v.string()),
+export const GalleryQueryEffectSchema = Schema.Struct({
+  collection: Schema.optional(Schema.String),
   page: PageSchema,
 });
+export const GalleryQuerySchema = standard(GalleryQueryEffectSchema);
 
 /** Le back-office pagine et voit aussi les entrées masquées. */
-export const GalleryAdminQuerySchema = v.object({
-  collection: v.optional(v.string()),
+export const GalleryAdminQueryEffectSchema = Schema.Struct({
+  collection: Schema.optional(Schema.String),
   page: PageSchema,
-  pageSize: v.optional(
-    v.pipe(
-      v.union([v.string(), v.number()]),
-      v.transform(Number),
-      v.integer(),
-      v.minValue(1),
-      v.maxValue(96)
-    ),
-    24
-  ),
+  pageSize: defaulted(boundedNumberInput(1, 96), 24),
 });
+export const GalleryAdminQuerySchema = standard(GalleryAdminQueryEffectSchema);
 
-export const GalleryEntryUpdateSchema = v.object({
-  alt: v.pipe(
-    v.string(),
-    v.trim(),
-    v.minLength(3, "Décrivez la photo pour les lecteurs d’écran."),
-    v.maxLength(200)
-  ),
-  caption: v.optional(v.pipe(v.string(), v.maxLength(200)), ""),
-  collectionId: v.optional(UuidSchema),
-  isVisible: v.boolean(),
+export const GalleryEntryUpdateEffectSchema = Schema.Struct({
+  alt: boundedString(3, 200, {
+    minimumMessage: "Décrivez la photo pour les lecteurs d’écran.",
+    trim: true,
+  }),
+  caption: defaulted(boundedString(0, 200), ""),
+  collectionId: Schema.optional(UuidSchema),
+  isVisible: Schema.Boolean,
 });
+export const GalleryEntryUpdateSchema = standard(
+  GalleryEntryUpdateEffectSchema
+);
 
-export const GalleryEntryCreateSchema = v.object({
-  caption: v.optional(v.pipe(v.string(), v.maxLength(200)), ""),
-  collectionSlug: v.optional(v.string(), "restaurant"),
+export const GalleryEntryCreateEffectSchema = Schema.Struct({
+  caption: defaulted(boundedString(0, 200), ""),
+  collectionSlug: defaulted(Schema.String, "restaurant"),
   mediaId: UuidSchema,
 });
+export const GalleryEntryCreateSchema = standard(
+  GalleryEntryCreateEffectSchema
+);
 
-export const GalleryReorderSchema = v.object({
-  ids: v.pipe(v.array(UuidSchema), v.minLength(1), v.maxLength(500)),
-});
-
-export const GalleryCollectionSchema = v.object({
-  description: v.optional(v.pipe(v.string(), v.maxLength(300)), ""),
-  isVisible: v.optional(v.boolean(), true),
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(80)),
-  slug: v.pipe(
-    v.string(),
-    v.trim(),
-    v.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Minuscules et tirets uniquement.")
+export const GalleryReorderEffectSchema = Schema.Struct({
+  ids: mutableArray(UuidSchema).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(500)
   ),
 });
+export const GalleryReorderSchema = standard(GalleryReorderEffectSchema);
 
-export const GalleryParamsSchema = v.object({ id: UuidSchema });
+export const GalleryCollectionEffectSchema = Schema.Struct({
+  description: defaulted(boundedString(0, 300), ""),
+  isVisible: defaulted(Schema.Boolean, true),
+  name: boundedString(2, 80, { trim: true }),
+  slug: Schema.Trim.check(
+    Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+      message: "Minuscules et tirets uniquement.",
+    })
+  ),
+});
+export const GalleryCollectionSchema = standard(GalleryCollectionEffectSchema);
 
-export type GalleryEntryUpdate = v.InferOutput<typeof GalleryEntryUpdateSchema>;
-export type GalleryEntryCreate = v.InferOutput<typeof GalleryEntryCreateSchema>;
-export type GalleryCollectionInput = v.InferOutput<
-  typeof GalleryCollectionSchema
->;
+export const GalleryParamsEffectSchema = Schema.Struct({ id: UuidSchema });
+export const GalleryParamsSchema = standard(GalleryParamsEffectSchema);
+
+export type GalleryEntryUpdate = typeof GalleryEntryUpdateEffectSchema.Type;
+export type GalleryEntryCreate = typeof GalleryEntryCreateEffectSchema.Type;
+export type GalleryCollectionInput = typeof GalleryCollectionEffectSchema.Type;
 
 export interface GalleryImage {
   alt: string;

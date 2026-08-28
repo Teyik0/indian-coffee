@@ -1,117 +1,129 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import * as SchemaGetter from "effect4/SchemaGetter";
+import {
+  boundedNumberInput,
+  boundedString,
+  defaulted,
+  IsoDate,
+  mutableArray,
+  standard,
+} from "@/api/effect/schema";
 import type { reservationEvents, reservations } from "@/db/schema/reservations";
 import { UuidSchema, VersionSchema } from "../shared";
 
-const optionalMessage = v.optional(v.pipe(v.string(), v.maxLength(1000)), "");
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const optionalMessage = defaulted(boundedString(0, 1000), "");
 
-export const ReservationCreateSchema = v.object({
-  consent: v.pipe(
-    v.boolean(),
-    v.check(
-      (value) => value,
-      "Votre accord est nécessaire pour traiter la demande."
-    )
+export const ReservationCreateEffectSchema = Schema.Struct({
+  consent: Schema.Boolean.check(
+    Schema.makeFilter((value) => value, {
+      message: "Votre accord est nécessaire pour traiter la demande.",
+    })
   ),
-  email: v.pipe(
-    v.string(),
-    v.trim(),
-    v.email("Indiquez une adresse email valide.")
+  email: Schema.Trim.check(
+    Schema.makeFilter((value) => EMAIL_PATTERN.test(value), {
+      message: "Indiquez une adresse email valide.",
+    })
   ),
-  fullName: v.pipe(
-    v.string(),
-    v.trim(),
-    v.minLength(2, "Indiquez votre nom."),
-    v.maxLength(100)
-  ),
+  fullName: boundedString(2, 100, {
+    minimumMessage: "Indiquez votre nom.",
+    trim: true,
+  }),
   message: optionalMessage,
-  occasion: v.optional(v.pipe(v.string(), v.maxLength(80)), ""),
-  partySize: v.pipe(
-    v.union([v.string(), v.number()]),
-    v.transform(Number),
-    v.integer(),
-    v.minValue(1),
+  occasion: defaulted(boundedString(0, 80), ""),
+  partySize: boundedNumberInput(
+    1,
     // Le plafond métier réel vit en base (`site_settings.max_party_size`) et est
     // appliqué par le service ; cette borne ne protège que la requête.
-    v.maxValue(100)
+    100
   ),
-  phone: v.pipe(
-    v.string(),
-    v.trim(),
-    v.minLength(10, "Indiquez un numéro de téléphone."),
-    v.maxLength(30)
+  phone: boundedString(10, 30, {
+    minimumMessage: "Indiquez un numéro de téléphone.",
+    trim: true,
+  }),
+  requestedDate: IsoDate,
+  requestedTime: Schema.String.check(
+    Schema.isPattern(/^\d{2}:\d{2}$/, {
+      message: "Choisissez un horaire valide.",
+    })
   ),
-  requestedDate: v.pipe(v.string(), v.isoDate("Choisissez une date valide.")),
-  requestedTime: v.pipe(
-    v.string(),
-    v.regex(/^\d{2}:\d{2}$/, "Choisissez un horaire valide.")
-  ),
-  website: v.optional(v.string(), ""),
+  website: defaulted(Schema.String, ""),
 });
+export const ReservationCreateSchema = standard(ReservationCreateEffectSchema);
 
-export const ReservationStatusSchema = v.picklist([
+export const ReservationStatusEffectSchema = Schema.Literals([
   "PENDING",
   "CONFIRMED",
   "DECLINED",
   "CANCELLED",
 ]);
+export const ReservationStatusSchema = standard(ReservationStatusEffectSchema);
 
-export const ReservationStatusUpdateSchema = v.object({
+export const ReservationStatusUpdateEffectSchema = Schema.Struct({
   // Optionnelle : ne pas transmettre de note laisse la note existante intacte.
-  adminNote: v.optional(v.pipe(v.string(), v.maxLength(1000))),
-  status: v.picklist(["CONFIRMED", "DECLINED", "CANCELLED"]),
+  adminNote: Schema.optional(boundedString(0, 1000)),
+  status: Schema.Literals(["CONFIRMED", "DECLINED", "CANCELLED"]),
   version: VersionSchema,
 });
+export const ReservationStatusUpdateSchema = standard(
+  ReservationStatusUpdateEffectSchema
+);
 
-export const ReservationParamsSchema = v.object({ id: UuidSchema });
+export const ReservationParamsEffectSchema = Schema.Struct({ id: UuidSchema });
+export const ReservationParamsSchema = standard(ReservationParamsEffectSchema);
 
 /**
  * Les paramètres de requête arrivent en chaînes par HTTP mais en valeurs
  * natives lorsque le serveur appelle l'API directement via Eden. Les schémas
  * acceptent donc les deux formes et normalisent vers un type de sortie unique.
  */
-const NumericQuerySchema = v.pipe(
-  v.union([v.string(), v.number()]),
-  v.transform(Number),
-  v.integer(),
-  v.minValue(1)
+const NumericQuerySchema = boundedNumberInput(1, Number.MAX_SAFE_INTEGER);
+
+const StatusQuerySchema = Schema.Union([
+  Schema.String,
+  mutableArray(Schema.String),
+]).pipe(
+  Schema.decodeTo(mutableArray(ReservationStatusEffectSchema), {
+    decode: SchemaGetter.transform(
+      (value) =>
+        (Array.isArray(value) ? value : value.split(",")).filter(
+          Boolean
+        ) as (typeof ReservationStatusEffectSchema.Type)[]
+    ),
+    encode: SchemaGetter.transform((value) => value),
+  })
 );
 
-export const ReservationListQuerySchema = v.object({
-  from: v.optional(v.pipe(v.string(), v.isoDate())),
-  order: v.optional(v.picklist(["asc", "desc"]), "desc"),
-  page: v.optional(NumericQuerySchema, 1),
-  pageSize: v.optional(NumericQuerySchema, 25),
-  search: v.optional(v.pipe(v.string(), v.maxLength(120))),
-  status: v.optional(
-    v.pipe(
-      v.union([v.string(), v.array(v.string())]),
-      v.transform((value) =>
-        (Array.isArray(value) ? value : value.split(",")).filter(Boolean)
-      ),
-      v.array(ReservationStatusSchema)
-    )
-  ),
-  to: v.optional(v.pipe(v.string(), v.isoDate())),
+export const ReservationListQueryEffectSchema = Schema.Struct({
+  from: Schema.optional(IsoDate),
+  order: defaulted(Schema.Literals(["asc", "desc"]), "desc"),
+  page: defaulted(NumericQuerySchema, 1),
+  pageSize: defaulted(NumericQuerySchema, 25),
+  search: Schema.optional(boundedString(0, 120)),
+  status: Schema.optional(StatusQuerySchema),
+  to: Schema.optional(IsoDate),
 });
+export const ReservationListQuerySchema = standard(
+  ReservationListQueryEffectSchema
+);
 
-export const AvailabilityQuerySchema = v.object({
-  date: v.pipe(v.string(), v.isoDate("Choisissez une date valide.")),
+export const AvailabilityQueryEffectSchema = Schema.Struct({
+  date: IsoDate,
 });
+export const AvailabilityQuerySchema = standard(AvailabilityQueryEffectSchema);
 
-export const CalendarQuerySchema = v.object({
-  days: v.optional(NumericQuerySchema, 60),
-  from: v.optional(v.pipe(v.string(), v.isoDate())),
+export const CalendarQueryEffectSchema = Schema.Struct({
+  days: defaulted(NumericQuerySchema, 60),
+  from: Schema.optional(IsoDate),
 });
+export const CalendarQuerySchema = standard(CalendarQueryEffectSchema);
 
-export type ReservationCreateInput = v.InferOutput<
-  typeof ReservationCreateSchema
->;
-export type ReservationStatus = v.InferOutput<typeof ReservationStatusSchema>;
-export type ReservationStatusUpdate = v.InferOutput<
-  typeof ReservationStatusUpdateSchema
->;
+export type ReservationCreateInput = typeof ReservationCreateEffectSchema.Type;
+export type ReservationStatus = typeof ReservationStatusEffectSchema.Type;
+export type ReservationStatusUpdate =
+  typeof ReservationStatusUpdateEffectSchema.Type;
 export type ReservationListQuery = Partial<
-  v.InferOutput<typeof ReservationListQuerySchema>
+  typeof ReservationListQueryEffectSchema.Type
 >;
 export interface ReservationPublicResult {
   message: string;

@@ -1,4 +1,5 @@
 import { createRoute } from "@teyik0/furin/client";
+import * as Effect from "effect4/Effect";
 import { t } from "elysia";
 import { ArrowLeftIcon } from "lucide-react";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
@@ -7,7 +8,7 @@ import { AdminPage } from "@/components/admin/page-shell";
 import { ReservationDetail } from "@/components/admin/reservation-detail";
 import { adminRoutes } from "@/components/admin/routes";
 import { Button } from "@/components/ui/button";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { route as rootRoute } from "../root";
 
 const reservationRoute = createRoute({
@@ -16,15 +17,23 @@ const reservationRoute = createRoute({
 });
 
 export default reservationRoute.page({
-  loader: async ({ request, redirect, params }) => {
-    await requireBackOfficeSession(request, redirect, "reservations:write");
-    const { reservation, events } = unwrapApiResult(
-      await getApi()
-        .api.admin.reservations({ id: (params as { id: string }).id })
-        .get({ headers: request.headers })
-    );
-    return { events, reservation };
-  },
+  loader: ({ request, redirect, params }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        yield* requireBackOfficeSession(
+          request,
+          redirect,
+          "reservations:write"
+        );
+        const { reservation, events } = yield* apiEffect((signal) =>
+          getApi()
+            .api.admin.reservations({ id: (params as { id: string }).id })
+            .get({ fetch: { signal }, headers: request.headers })
+        );
+        return { events, reservation };
+      }),
+      request.signal
+    ),
   component: ({ reservation, events }) => (
     <AdminPage
       breadcrumbs={

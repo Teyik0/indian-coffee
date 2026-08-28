@@ -2,9 +2,9 @@ import "@teyik0/furin/server-only";
 import { SQL } from "bun";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { schema } from "@/db/schema";
-import { env } from "./env";
+import { env, reveal } from "./env";
 
-export const sqlClient = new SQL(env.DATABASE_URL, {
+export const sqlClient = new SQL(reveal(env.DATABASE_URL), {
   connectionTimeout: 10,
   idleTimeout: 20,
   max: 5,

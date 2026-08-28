@@ -12,6 +12,7 @@ export function AdminPage({
   actions,
   toolbar,
   breadcrumbs,
+  eyebrow,
   children,
   className,
 }: {
@@ -20,16 +21,20 @@ export function AdminPage({
   actions?: ReactNode;
   toolbar?: ReactNode;
   breadcrumbs?: ReactNode;
+  eyebrow?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
-      <header className="flex flex-col gap-4">
+    <div className={cn("admin-page flex flex-col gap-6", className)}>
+      <header className="admin-page-heading flex flex-col gap-4">
         {breadcrumbs}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="font-display text-heading">{title}</h1>
+            {eyebrow ? <p className="admin-page-eyebrow">{eyebrow}</p> : null}
+            <h1 className="admin-page-title font-display text-heading">
+              {title}
+            </h1>
             {description ? (
               <p className="mt-1 max-w-2xl text-muted-foreground text-sm">
                 {description}
@@ -72,10 +77,11 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-card",
+        "admin-stat-tile flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-card",
         tone === "attention" && "border-saffron/50 bg-saffron/8",
         tone === "positive" && "border-leaf/40"
       )}
+      data-tone={tone}
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted-foreground text-sm">{label}</p>

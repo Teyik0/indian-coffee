@@ -1,12 +1,15 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import { Email, mutableArray, standard, Uuid } from "@/api/effect/schema";
 
-export const EmailJobSchema = v.object({
-  reference: v.string(),
-  reservationId: v.pipe(v.string(), v.uuid()),
-  template: v.string(),
-  to: v.pipe(v.string(), v.email()),
+export const EmailJobEffectSchema = Schema.Struct({
+  reference: Schema.String,
+  reservationId: Uuid,
+  template: Schema.String,
+  to: Email,
 });
+export const EmailJobSchema = standard(EmailJobEffectSchema);
 
-export const MediaDeleteJobSchema = v.object({
-  keys: v.pipe(v.array(v.string()), v.minLength(1)),
+export const MediaDeleteJobEffectSchema = Schema.Struct({
+  keys: mutableArray(Schema.String).check(Schema.isMinLength(1)),
 });
+export const MediaDeleteJobSchema = standard(MediaDeleteJobEffectSchema);

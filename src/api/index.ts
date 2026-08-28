@@ -2,9 +2,9 @@ import "@teyik0/furin/server-only";
 import { furinSync } from "@teyik0/furin";
 import { Elysia } from "elysia";
 import { sync } from "@/sync";
+import { ContentService, DashboardService } from "./effect/domain-services";
+import { runApiService } from "./effect/runtime";
 import { contentRouter } from "./modules/content";
-import { contentService } from "./modules/content/service";
-import { dashboardService } from "./modules/dashboard/service";
 import { adminGalleryRouter, galleryRouter } from "./modules/gallery";
 import { jobsRouter } from "./modules/jobs";
 import { mediaRouter } from "./modules/media";
@@ -22,7 +22,9 @@ export const apiPlugin = new Elysia({ name: "indian-coffee-api" })
   .use(errorPlugin)
   .use(betterAuthPlugin)
   .use(furinSync(sync))
-  .get("/api/content", () => contentService.get())
+  .get("/api/content", ({ request }) =>
+    runApiService(ContentService, (service) => service.get(), request.signal)
+  )
   .get(
     "/api/admin/session",
     ({ user }) => ({
@@ -37,12 +39,24 @@ export const apiPlugin = new Elysia({ name: "indian-coffee-api" })
   )
   // Agrégats calculés en base : la version précédente chargeait la carte
   // entière et toutes les réservations pour en déduire quatre compteurs.
-  .get("/api/admin/dashboard", () => dashboardService.get(), {
-    onlyAdmin: true,
-  })
+  .get(
+    "/api/admin/dashboard",
+    ({ request }) =>
+      runApiService(
+        DashboardService,
+        (service) => service.get(),
+        request.signal
+      ),
+    { onlyAdmin: true }
+  )
   .get(
     "/api/admin/dashboard/unavailable",
-    () => dashboardService.getUnavailableItems(),
+    ({ request }) =>
+      runApiService(
+        DashboardService,
+        (service) => service.getUnavailableItems(),
+        request.signal
+      ),
     { onlyAdmin: true }
   )
   .use(publicMenuRouter)

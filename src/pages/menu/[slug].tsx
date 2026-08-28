@@ -1,7 +1,8 @@
 import { createRoute } from "@teyik0/furin/client";
+import * as Effect from "effect4/Effect";
 import { t } from "elysia";
 import { MenuView } from "@/components/public/menu-view";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { appUrl, headLinks, headScripts, socialMeta } from "@/lib/head";
 import { breadcrumbJsonLd, jsonLdScript } from "@/lib/structured-data";
 import { route as rootRoute } from "../root";
@@ -14,29 +15,35 @@ const menuCategoryRoute = createRoute({
 });
 
 export default menuCategoryRoute.page({
-  loader: async ({ params }) => {
-    const { slug } = params as { slug: string };
-    const categories = unwrapApiResult(
-      await getApi().api.menu.get({ query: { category: slug } })
-    );
-    const title = categories[0]?.name ?? "La carte";
-    return {
-      categories,
-      description: categories[0]?.description ?? "",
-      jsonLd: jsonLdScript(
-        breadcrumbJsonLd(
-          [
-            { name: "Accueil", path: "/" },
-            { name: "La carte", path: "/menu" },
-            { name: title, path: `/menu/${slug}` },
-          ],
-          appUrl
-        )
-      ),
-      slug,
-      title,
-    };
-  },
+  loader: ({ params }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        const { slug } = params as { slug: string };
+        const categories = yield* apiEffect((signal) =>
+          getApi().api.menu.get({
+            fetch: { signal },
+            query: { category: slug },
+          })
+        );
+        const title = categories[0]?.name ?? "La carte";
+        return {
+          categories,
+          description: categories[0]?.description ?? "",
+          jsonLd: jsonLdScript(
+            breadcrumbJsonLd(
+              [
+                { name: "Accueil", path: "/" },
+                { name: "La carte", path: "/menu" },
+                { name: title, path: `/menu/${slug}` },
+              ],
+              appUrl
+            )
+          ),
+          slug,
+          title,
+        };
+      })
+    ),
   component: ({ categories, title, description }) => (
     <>
       <section className="madras-page-hero madras-page-hero-compact grain">

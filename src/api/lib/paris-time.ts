@@ -130,15 +130,3 @@ export const WEEKDAY_NAMES = [
 export function weekdayName(isoDay: number) {
   return WEEKDAY_NAMES[isoDay - 1] ?? String(isoDay);
 }
-
-const longDateFormatter = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "long",
-  timeZone: PARIS_TIME_ZONE,
-  weekday: "long",
-});
-
-/** `"2026-07-27"` → `"lundi 27 juillet"`. */
-export function formatLongDate(day: string) {
-  return longDateFormatter.format(new Date(`${day}T12:00:00Z`));
-}

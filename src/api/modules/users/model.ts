@@ -1,42 +1,50 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import { boundedString, standard } from "@/api/effect/schema";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Deux rôles seulement dans le back-office. `customer` est le rôle par défaut
  * d'une inscription sociale : il n'ouvre aucun accès et déclenche l'écran
  * « accès refusé » plutôt qu'une réponse 403 en texte brut.
  */
-export const BackOfficeRoleSchema = v.picklist(["admin", "editor"]);
+export const BackOfficeRoleEffectSchema = Schema.Literals(["admin", "editor"]);
+export const BackOfficeRoleSchema = standard(BackOfficeRoleEffectSchema);
 
-export const UserCreateSchema = v.object({
-  email: v.pipe(
-    v.string(),
-    v.trim(),
-    v.email("Indiquez une adresse email valide.")
+export const UserCreateEffectSchema = Schema.Struct({
+  email: Schema.Trim.pipe(
+    Schema.check(
+      Schema.makeFilter((value) => EMAIL_PATTERN.test(value), {
+        message: "Indiquez une adresse email valide.",
+      })
+    )
   ),
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(80)),
-  password: v.pipe(
-    v.string(),
-    v.minLength(12, "Le mot de passe contient au moins 12 caractères."),
-    v.maxLength(128)
-  ),
-  role: BackOfficeRoleSchema,
+  name: boundedString(2, 80, { trim: true }),
+  password: boundedString(12, 128, {
+    minimumMessage: "Le mot de passe contient au moins 12 caractères.",
+  }),
+  role: BackOfficeRoleEffectSchema,
 });
+export const UserCreateSchema = standard(UserCreateEffectSchema);
 
-export const UserRoleUpdateSchema = v.object({
-  role: BackOfficeRoleSchema,
+export const UserRoleUpdateEffectSchema = Schema.Struct({
+  role: BackOfficeRoleEffectSchema,
 });
+export const UserRoleUpdateSchema = standard(UserRoleUpdateEffectSchema);
 
-export const UserBanUpdateSchema = v.object({
-  banned: v.boolean(),
-  reason: v.optional(v.pipe(v.string(), v.maxLength(200))),
+export const UserBanUpdateEffectSchema = Schema.Struct({
+  banned: Schema.Boolean,
+  reason: Schema.optional(boundedString(0, 200)),
 });
+export const UserBanUpdateSchema = standard(UserBanUpdateEffectSchema);
 
-export const UserParamsSchema = v.object({
-  id: v.pipe(v.string(), v.minLength(1)),
+export const UserParamsEffectSchema = Schema.Struct({
+  id: Schema.String.check(Schema.isMinLength(1)),
 });
+export const UserParamsSchema = standard(UserParamsEffectSchema);
 
-export type BackOfficeRole = v.InferOutput<typeof BackOfficeRoleSchema>;
-export type UserCreateInput = v.InferOutput<typeof UserCreateSchema>;
+export type BackOfficeRole = typeof BackOfficeRoleEffectSchema.Type;
+export type UserCreateInput = typeof UserCreateEffectSchema.Type;
 
 export interface BackOfficeUser {
   banned: boolean;

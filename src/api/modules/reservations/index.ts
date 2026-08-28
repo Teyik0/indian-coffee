@@ -1,4 +1,6 @@
 import { Elysia } from "elysia";
+import { ReservationService } from "@/api/effect/domain-services";
+import { runApiService } from "@/api/effect/runtime";
 import { betterAuthPlugin } from "@/api/plugins/better-auth.plugin";
 import {
   AvailabilityQuerySchema,
@@ -8,7 +10,6 @@ import {
   ReservationParamsSchema,
   ReservationStatusUpdateSchema,
 } from "./model";
-import { reservationService } from "./service";
 
 export const publicReservationRouter = new Elysia({
   name: "public-reservations",
@@ -18,12 +19,22 @@ export const publicReservationRouter = new Elysia({
   // proposer des créneaux réels au lieu d'un champ heure libre.
   .get(
     "/calendar",
-    ({ query }) => reservationService.getCalendar(query.from, query.days),
+    ({ query, request }) =>
+      runApiService(
+        ReservationService,
+        (service) => service.getCalendar(query.from, query.days),
+        request.signal
+      ),
     { query: CalendarQuerySchema }
   )
   .get(
     "/availability",
-    ({ query }) => reservationService.getAvailability(query.date),
+    ({ query, request }) =>
+      runApiService(
+        ReservationService,
+        (service) => service.getAvailability(query.date),
+        request.signal
+      ),
     { query: AvailabilityQuerySchema }
   )
   .post(
@@ -36,10 +47,15 @@ export const publicReservationRouter = new Elysia({
           message: "Origine de la requête refusée.",
         });
       }
-      const result = await reservationService.create(body, {
-        idempotencyKey: headers["idempotency-key"] ?? crypto.randomUUID(),
-        ip: headers["x-forwarded-for"]?.split(",")[0]?.trim() ?? "unknown",
-      });
+      const result = await runApiService(
+        ReservationService,
+        (service) =>
+          service.create(body, {
+            idempotencyKey: headers["idempotency-key"] ?? crypto.randomUUID(),
+            ip: headers["x-forwarded-for"]?.split(",")[0]?.trim() ?? "unknown",
+          }),
+        request.signal
+      );
       set.status = 201;
       return result;
     },
@@ -54,22 +70,54 @@ export const adminReservationRouter = new Elysia({
   prefix: "/api/admin/reservations",
 })
   .use(betterAuthPlugin)
-  .get("/", ({ query }) => reservationService.list(query), {
-    onlyAdmin: true,
-    query: ReservationListQuerySchema,
-  })
-  .get("/today", () => reservationService.listForDay(), { onlyAdmin: true })
-  .get("/:id", ({ params }) => reservationService.getById(params.id), {
-    onlyAdmin: true,
-    params: ReservationParamsSchema,
-  })
+  .get(
+    "/",
+    ({ query, request }) =>
+      runApiService(
+        ReservationService,
+        (service) => service.list(query),
+        request.signal
+      ),
+    {
+      onlyAdmin: true,
+      query: ReservationListQuerySchema,
+    }
+  )
+  .get(
+    "/today",
+    ({ request }) =>
+      runApiService(
+        ReservationService,
+        (service) => service.listForDay(),
+        request.signal
+      ),
+    { onlyAdmin: true }
+  )
+  .get(
+    "/:id",
+    ({ params, request }) =>
+      runApiService(
+        ReservationService,
+        (service) => service.getById(params.id),
+        request.signal
+      ),
+    {
+      onlyAdmin: true,
+      params: ReservationParamsSchema,
+    }
+  )
   .patch(
     "/:id/status",
-    ({ params, body, user }) =>
-      reservationService.updateStatus(params.id, body, {
-        id: user.id,
-        name: user.name,
-      }),
+    ({ params, body, request, user }) =>
+      runApiService(
+        ReservationService,
+        (service) =>
+          service.updateStatus(params.id, body, {
+            id: user.id,
+            name: user.name,
+          }),
+        request.signal
+      ),
     {
       body: ReservationStatusUpdateSchema,
       onlyAdmin: true,

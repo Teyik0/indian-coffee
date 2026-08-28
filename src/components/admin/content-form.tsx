@@ -1,6 +1,6 @@
 import { useSync } from "@teyik0/furin/client";
 import { SaveIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { SiteContent } from "@/api/modules/content/model";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -115,12 +115,7 @@ function AreaField({
  * n'étaient éditables nulle part. Trois onglets, deux versions optimistes
  * distinctes (`site_settings` et `home_content` ont chacune la leur).
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ce formulaire coordonne deux brouillons et leurs versions optimistes.
-export function ContentForm({
-  initialContent,
-}: {
-  initialContent: SiteContent;
-}) {
+function useContentForm(initialContent: SiteContent) {
   const [settings, setSettings] = useState<SettingsDraft>({
     addressLine: initialContent.addressLine,
     city: initialContent.city,
@@ -165,11 +160,9 @@ export function ContentForm({
       storyTitle: initialContent.story.title,
     })
   );
-  const [settingsVersion, setSettingsVersion] = useState(
-    initialContent.version
-  );
+  const settingsVersion = useRef(initialContent.version);
   // `home_content` porte sa propre version, distincte de celle des réglages.
-  const [homeVersion, setHomeVersion] = useState(initialContent.homeVersion);
+  const homeVersion = useRef(initialContent.homeVersion);
   const [pending, setPending] = useState<"settings" | "home" | null>(null);
   const [conflict, setConflict] = useState<string | null>(null);
 
@@ -195,7 +188,7 @@ export function ContentForm({
     setConflict(null);
     const { data, error } = await saveSettings({
       ...settings,
-      version: settingsVersion,
+      version: settingsVersion.current,
     });
     setPending(null);
     if (error) {
@@ -211,7 +204,7 @@ export function ContentForm({
       return;
     }
     if (data && "version" in data) {
-      setSettingsVersion(data.version);
+      settingsVersion.current = data.version;
     }
     setSettingsBaseline(JSON.stringify(settings));
     toast.success("Informations enregistrées");
@@ -220,7 +213,10 @@ export function ContentForm({
   async function submitHome() {
     setPending("home");
     setConflict(null);
-    const { data, error } = await saveHome({ ...home, version: homeVersion });
+    const { data, error } = await saveHome({
+      ...home,
+      version: homeVersion.current,
+    });
     setPending(null);
     if (error) {
       const message = apiErrorMessage(
@@ -235,12 +231,49 @@ export function ContentForm({
       return;
     }
     if (data && "version" in data) {
-      setHomeVersion(data.version);
+      homeVersion.current = data.version;
     }
     setHomeBaseline(JSON.stringify(home));
     toast.success("Page d’accueil enregistrée");
   }
 
+  return {
+    conflict,
+    dirtyLabel,
+    home,
+    homeDirty,
+    pending,
+    setHome,
+    setSettings,
+    settings,
+    settingsDirty,
+    submitHome,
+    submitSettings,
+  };
+}
+
+export function ContentForm({
+  initialContent,
+}: {
+  initialContent: SiteContent;
+}) {
+  return renderContentForm(useContentForm(initialContent));
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: la vue rend deux brouillons indépendants dans des onglets.
+function renderContentForm({
+  conflict,
+  dirtyLabel,
+  home,
+  homeDirty,
+  pending,
+  setHome,
+  setSettings,
+  settings,
+  settingsDirty,
+  submitHome,
+  submitSettings,
+}: ReturnType<typeof useContentForm>) {
   return (
     <div className="flex flex-col gap-6">
       {conflict ? (

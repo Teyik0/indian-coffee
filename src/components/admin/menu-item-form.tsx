@@ -1,6 +1,6 @@
 import { useSync } from "@teyik0/furin/client";
 import { PlusIcon, SaveIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import {
   DIETARY_FLAGS,
@@ -30,6 +30,7 @@ import { InputGroup, InputGroupTextarea } from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -99,12 +100,111 @@ function spiceLevelOrNone(spiceLevel: SpiceLevel | null) {
   return spiceLevel === null ? "NONE" : spiceLevel;
 }
 
+interface MenuItemFormState {
+  conflict: string | null;
+  description: string;
+  featured: boolean;
+  flags: string[];
+  mediaId: string;
+  name: string;
+  pending: boolean;
+  spiceLevel: SpiceLevel | "NONE";
+  status: MenuStatus;
+  variants: VariantDraft[];
+  version: number;
+}
+
+type MenuItemFormAction =
+  | { type: "nameChanged"; value: string }
+  | { type: "descriptionChanged"; value: string }
+  | { type: "statusChanged"; status: MenuStatus }
+  | { type: "featuredChanged"; featured: boolean }
+  | { type: "spiceLevelChanged"; spiceLevel: SpiceLevel | "NONE" }
+  | { type: "flagToggled"; flag: string; checked: boolean }
+  | { type: "mediaChanged"; mediaId: string }
+  | { type: "variantChanged"; key: string; patch: Partial<VariantDraft> }
+  | { type: "variantRemoved"; key: string }
+  | { type: "variantAdded"; variant: VariantDraft }
+  | { type: "requestStarted" }
+  | { type: "requestFinished" }
+  | { type: "conflictDetected"; message: string }
+  | { type: "versionUpdated"; version: number }
+  | { type: "draftReset"; item: MenuItemView };
+
+function menuItemFormReducer(
+  state: MenuItemFormState,
+  action: MenuItemFormAction
+): MenuItemFormState {
+  switch (action.type) {
+    case "nameChanged":
+      return { ...state, name: action.value };
+    case "descriptionChanged":
+      return { ...state, description: action.value };
+    case "statusChanged":
+      return { ...state, status: action.status };
+    case "featuredChanged":
+      return { ...state, featured: action.featured };
+    case "spiceLevelChanged":
+      return { ...state, spiceLevel: action.spiceLevel };
+    case "flagToggled":
+      return {
+        ...state,
+        flags: action.checked
+          ? [...state.flags, action.flag]
+          : state.flags.filter((flag) => flag !== action.flag),
+      };
+    case "mediaChanged":
+      return { ...state, mediaId: action.mediaId };
+    case "variantChanged":
+      return {
+        ...state,
+        variants: state.variants.map((variant) =>
+          variant.key === action.key ? { ...variant, ...action.patch } : variant
+        ),
+      };
+    case "variantRemoved":
+      return {
+        ...state,
+        variants: state.variants.filter(
+          (variant) => variant.key !== action.key
+        ),
+      };
+    case "variantAdded":
+      return {
+        ...state,
+        variants: [...state.variants, action.variant],
+      };
+    case "requestStarted":
+      return { ...state, conflict: null, pending: true };
+    case "requestFinished":
+      return { ...state, pending: false };
+    case "conflictDetected":
+      return { ...state, conflict: action.message };
+    case "versionUpdated":
+      return { ...state, version: action.version };
+    case "draftReset":
+      return {
+        ...state,
+        description: action.item.description,
+        featured: action.item.featured,
+        flags: action.item.dietaryFlags,
+        mediaId: action.item.media ? action.item.media.id : "",
+        name: action.item.name,
+        spiceLevel: spiceLevelOrNone(action.item.spiceLevel),
+        status: action.item.status,
+        variants: toDraft(action.item),
+      };
+    default:
+      return state;
+  }
+}
+
 /**
  * Écran d'édition d'un plat. Il n'existait aucun moyen de changer un prix : le
  * back-office ne savait que basculer la disponibilité. Les variantes sont
  * remplacées en bloc côté serveur, dans une transaction.
  */
-export function MenuItemForm({
+function useMenuItemForm({
   item,
   categoryName,
   sectionName,
@@ -115,19 +215,32 @@ export function MenuItemForm({
   sectionName: string;
   mediaOptions: MediaOption[];
 }) {
-  const [name, setName] = useState(item.name);
-  const [description, setDescription] = useState(item.description);
-  const [status, setStatus] = useState<MenuStatus>(item.status);
-  const [featured, setFeatured] = useState(item.featured);
-  const [spiceLevel, setSpiceLevel] = useState<SpiceLevel | "NONE">(
-    spiceLevelOrNone(item.spiceLevel)
-  );
-  const [flags, setFlags] = useState<string[]>(item.dietaryFlags);
-  const [mediaId, setMediaId] = useState(item.media ? item.media.id : "");
-  const [variants, setVariants] = useState<VariantDraft[]>(toDraft(item));
-  const [version, setVersion] = useState(item.version);
-  const [pending, setPending] = useState(false);
-  const [conflict, setConflict] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(menuItemFormReducer, {
+    conflict: null,
+    description: item.description,
+    featured: item.featured,
+    flags: item.dietaryFlags,
+    mediaId: item.media ? item.media.id : "",
+    name: item.name,
+    pending: false,
+    spiceLevel: spiceLevelOrNone(item.spiceLevel),
+    status: item.status,
+    variants: toDraft(item),
+    version: item.version,
+  });
+  const {
+    conflict,
+    description,
+    featured,
+    flags,
+    mediaId,
+    name,
+    pending,
+    spiceLevel,
+    status,
+    variants,
+    version,
+  } = state;
 
   const save = useSync((input: MenuItemPayload, options) =>
     api.api.admin.menu.items({ id: item.id }).patch(input, options)
@@ -145,11 +258,7 @@ export function MenuItemForm({
       JSON.stringify(toDraft(item).map(({ key: _key, ...rest }) => rest));
 
   function updateVariant(key: string, patch: Partial<VariantDraft>) {
-    setVariants((current) =>
-      current.map((variant) =>
-        variant.key === key ? { ...variant, ...patch } : variant
-      )
-    );
+    dispatch({ key, patch, type: "variantChanged" });
   }
 
   async function submit() {
@@ -167,8 +276,7 @@ export function MenuItemForm({
       return;
     }
 
-    setPending(true);
-    setConflict(null);
+    dispatch({ type: "requestStarted" });
     const { data, error } = await save({
       description: description.trim(),
       dietaryFlags: flags,
@@ -185,7 +293,7 @@ export function MenuItemForm({
       }>,
       version,
     });
-    setPending(false);
+    dispatch({ type: "requestFinished" });
 
     if (error) {
       const message = apiErrorMessage(
@@ -195,20 +303,104 @@ export function MenuItemForm({
       // Le conflit de version reste affiché : un toast disparaîtrait avant que
       // l'utilisateur comprenne qu'il doit recharger.
       if (apiErrorCode(error) === "VERSION_CONFLICT") {
-        setConflict(message);
+        dispatch({ message, type: "conflictDetected" });
       } else {
         toast.error("Enregistrement impossible", { description: message });
       }
       return;
     }
     if (data && "version" in data) {
-      setVersion(data.version);
+      dispatch({ type: "versionUpdated", version: data.version });
     }
     toast.success("Plat enregistré", {
       description: "La carte publique est mise à jour.",
     });
   }
 
+  return {
+    addVariant: () =>
+      dispatch({
+        type: "variantAdded",
+        variant: {
+          detail: "",
+          key: `new-${variants.length}-${variants.at(-1)?.key ?? "0"}`,
+          label: "",
+          price: "0.00",
+        },
+      }),
+    categoryName,
+    conflict,
+    description,
+    dirty,
+    featured,
+    flags,
+    mediaId,
+    mediaOptions,
+    name,
+    pending,
+    removeVariant: (key: string) => dispatch({ key, type: "variantRemoved" }),
+    resetDraft: () => dispatch({ item, type: "draftReset" }),
+    sectionName,
+    setDescription: (value: string) =>
+      dispatch({ type: "descriptionChanged", value }),
+    setFeatured: (value: boolean) =>
+      dispatch({ featured: value, type: "featuredChanged" }),
+    setMediaId: (value: string) =>
+      dispatch({ mediaId: value, type: "mediaChanged" }),
+    setName: (value: string) => dispatch({ type: "nameChanged", value }),
+    setSpiceLevel: (value: SpiceLevel | "NONE") =>
+      dispatch({ spiceLevel: value, type: "spiceLevelChanged" }),
+    setStatus: (value: MenuStatus) =>
+      dispatch({ status: value, type: "statusChanged" }),
+    spiceLevel,
+    status,
+    submit,
+    toggleFlag: (flag: string, checked: boolean) =>
+      dispatch({ checked, flag, type: "flagToggled" }),
+    updateVariant,
+    variants,
+    version,
+  };
+}
+
+export function MenuItemForm(props: {
+  item: MenuItemView;
+  categoryName: string;
+  sectionName: string;
+  mediaOptions: MediaOption[];
+}) {
+  return renderMenuItemForm(useMenuItemForm(props));
+}
+
+function renderMenuItemForm({
+  addVariant,
+  categoryName,
+  conflict,
+  description,
+  dirty,
+  featured,
+  flags,
+  mediaId,
+  mediaOptions,
+  name,
+  pending,
+  removeVariant,
+  resetDraft,
+  sectionName,
+  setDescription,
+  setFeatured,
+  setMediaId,
+  setName,
+  setSpiceLevel,
+  setStatus,
+  spiceLevel,
+  status,
+  submit,
+  toggleFlag,
+  updateVariant,
+  variants,
+  version,
+}: ReturnType<typeof useMenuItemForm>) {
   return (
     <div className="flex flex-col gap-6">
       {conflict ? (
@@ -277,13 +469,15 @@ export function MenuItemForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(
-                      ["AVAILABLE", "UNAVAILABLE", "HIDDEN"] as MenuStatus[]
-                    ).map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {MENU_STATUS_LABELS[value]}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {(
+                        ["AVAILABLE", "UNAVAILABLE", "HIDDEN"] as MenuStatus[]
+                      ).map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {MENU_STATUS_LABELS[value]}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
                 <FieldDescription>
@@ -320,14 +514,16 @@ export function MenuItemForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NONE">Non précisé</SelectItem>
-                    {(["MILD", "MEDIUM", "HOT"] as SpiceLevel[]).map(
-                      (value) => (
-                        <SelectItem key={value} value={value}>
-                          {SPICE_LABELS[value]}
-                        </SelectItem>
-                      )
-                    )}
+                    <SelectGroup>
+                      <SelectItem value="NONE">Non précisé</SelectItem>
+                      {(["MILD", "MEDIUM", "HOT"] as SpiceLevel[]).map(
+                        (value) => (
+                          <SelectItem key={value} value={value}>
+                            {SPICE_LABELS[value]}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
@@ -346,11 +542,7 @@ export function MenuItemForm({
                         checked={flags.includes(flag)}
                         id={id}
                         onCheckedChange={(checked) =>
-                          setFlags((current) =>
-                            checked
-                              ? [...current, flag]
-                              : current.filter((value) => value !== flag)
-                          )
+                          toggleFlag(flag, Boolean(checked))
                         }
                       />
                       <FieldLabel className="font-normal" htmlFor={id}>
@@ -427,11 +619,7 @@ export function MenuItemForm({
               <Button
                 aria-label="Retirer cette ligne de prix"
                 disabled={variants.length === 1}
-                onClick={() =>
-                  setVariants((current) =>
-                    current.filter((entry) => entry.key !== variant.key)
-                  )
-                }
+                onClick={() => removeVariant(variant.key)}
                 size="icon"
                 variant="ghost"
               >
@@ -441,17 +629,7 @@ export function MenuItemForm({
           ))}
           <Button
             className="self-start"
-            onClick={() =>
-              setVariants((current) => [
-                ...current,
-                {
-                  detail: "",
-                  key: `new-${current.length}-${current.at(-1)?.key ?? "0"}`,
-                  label: "",
-                  price: "0.00",
-                },
-              ])
-            }
+            onClick={addVariant}
             size="sm"
             variant="outline"
           >
@@ -518,20 +696,7 @@ export function MenuItemForm({
               .join(" / ")}
           </p>
           <div className="flex items-center gap-2">
-            <Button
-              disabled={pending}
-              onClick={() => {
-                setName(item.name);
-                setDescription(item.description);
-                setStatus(item.status);
-                setFeatured(item.featured);
-                setSpiceLevel(spiceLevelOrNone(item.spiceLevel));
-                setFlags(item.dietaryFlags);
-                setMediaId(item.media ? item.media.id : "");
-                setVariants(toDraft(item));
-              }}
-              variant="ghost"
-            >
+            <Button disabled={pending} onClick={resetDraft} variant="ghost">
               Annuler
             </Button>
             <Button disabled={pending} onClick={submit}>

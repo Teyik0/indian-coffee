@@ -1,3 +1,4 @@
+import * as Effect from "effect4/Effect";
 import {
   AlertTriangleIcon,
   CalendarCheckIcon,
@@ -28,7 +29,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import {
   formatIsoDay,
   formatRelative,
@@ -39,18 +40,31 @@ import {
 import { route } from "./root";
 
 export default route.page({
-  loader: async ({ request, redirect }) => {
-    await requireBackOfficeSession(request, redirect, "dashboard:read");
-    const [dashboard, unavailable] = await Promise.all([
-      getApi()
-        .api.admin.dashboard.get({ headers: request.headers })
-        .then(unwrapApiResult),
-      getApi()
-        .api.admin.dashboard.unavailable.get({ headers: request.headers })
-        .then(unwrapApiResult),
-    ]);
-    return { dashboard, unavailable };
-  },
+  loader: ({ request, redirect }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        yield* requireBackOfficeSession(request, redirect, "dashboard:read");
+        const { dashboard, unavailable } = yield* Effect.all(
+          {
+            dashboard: apiEffect((signal) =>
+              getApi().api.admin.dashboard.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+            unavailable: apiEffect((signal) =>
+              getApi().api.admin.dashboard.unavailable.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+          },
+          { concurrency: "unbounded" }
+        );
+        return { dashboard, unavailable };
+      }),
+      request.signal
+    ),
   component: ({ dashboard, unavailable }) => {
     const { stats, today, openState, upcomingExceptions, recentEvents } =
       dashboard;
@@ -74,7 +88,8 @@ export default route.page({
           </Button>
         }
         description={openStateDescription}
-        title="Vue d’ensemble"
+        eyebrow="Tableau de bord"
+        title="Le service, en un coup d’œil."
       >
         {stats.failedJobs > 0 ? (
           <Alert variant="destructive">
@@ -89,7 +104,7 @@ export default route.page({
           </Alert>
         ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="admin-dashboard-primary-stats grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatTile
             hint={`${today.covers} couvert${today.covers > 1 ? "s" : ""} attendu${today.covers > 1 ? "s" : ""}`}
             icon={<CalendarCheckIcon />}
@@ -124,8 +139,8 @@ export default route.page({
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-          <Card>
+        <div className="admin-dashboard-service-grid grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <Card className="admin-dashboard-service-card">
             <CardHeader>
               <CardTitle>Service du jour</CardTitle>
               <CardDescription>{formatIsoDay(today.day)}</CardDescription>
@@ -182,7 +197,7 @@ export default route.page({
           </Card>
 
           <div className="flex flex-col gap-6">
-            <Card>
+            <Card className="admin-dashboard-side-card">
               <CardHeader>
                 <CardTitle>À remettre à la carte</CardTitle>
                 <CardDescription>
@@ -217,7 +232,7 @@ export default route.page({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="admin-dashboard-side-card">
               <CardHeader>
                 <CardTitle>Fermetures à venir</CardTitle>
                 <CardDescription>
@@ -258,7 +273,7 @@ export default route.page({
           </div>
         </div>
 
-        <Card>
+        <Card className="admin-dashboard-activity-card">
           <CardHeader>
             <CardTitle>Activité récente</CardTitle>
             <CardDescription>

@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { env } from "./env";
+import { env, reveal } from "./env";
 
 let client: Resend | undefined;
 
@@ -8,6 +8,6 @@ export function getResend() {
     return null;
   }
 
-  client ??= new Resend(env.RESEND_API_KEY);
+  client ??= new Resend(reveal(env.RESEND_API_KEY));
   return client;
 }

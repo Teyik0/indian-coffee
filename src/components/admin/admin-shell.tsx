@@ -1,4 +1,5 @@
 import { useRouter } from "@teyik0/furin/link";
+import * as Effect from "effect4/Effect";
 import {
   CalendarClockIcon,
   ChevronsUpDownIcon,
@@ -7,7 +8,6 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   NotebookTabsIcon,
-  PaletteIcon,
   SoupIcon,
   UsersIcon,
   UtensilsCrossedIcon,
@@ -112,12 +112,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     items: [
       {
-        icon: PaletteIcon,
-        label: "Pistes visuelles",
-        permission: "dashboard:read",
-        to: adminRoutes.designs,
-      },
-      {
         icon: UsersIcon,
         label: "Utilisateurs",
         permission: "users:read",
@@ -139,6 +133,18 @@ function initials(name: string) {
     .join("");
 }
 
+function signOut() {
+  Effect.runPromise(
+    authClient.signOut().pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          window.location.href = "/admin/login";
+        })
+      )
+    )
+  );
+}
+
 export function AdminShell({
   children,
   user,
@@ -155,11 +161,6 @@ export function AdminShell({
   const { currentHref } = useRouter();
   const pathname = currentHref.split(HREF_SUFFIX_PATTERN, 1)[0] || "/";
 
-  async function signOut() {
-    await authClient.signOut();
-    window.location.href = "/admin/login";
-  }
-
   const visibleGroups = NAV_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) =>
@@ -168,9 +169,9 @@ export function AdminShell({
   })).filter((group) => group.items.length > 0);
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
+    <SidebarProvider className="admin-comptoir">
+      <Sidebar className="admin-sidebar" collapsible="icon">
+        <SidebarHeader className="admin-sidebar-header">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -180,7 +181,7 @@ export function AdminShell({
               >
                 <img
                   alt=""
-                  className="size-8 rounded-lg"
+                  className="admin-brand-logo size-8 rounded-lg"
                   height={32}
                   src="/admin/public/indian-coffee-logo.webp"
                   width={32}
@@ -278,23 +279,27 @@ export function AdminShell({
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur-xl">
+      <SidebarInset className="admin-inset">
+        <header className="admin-topbar sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4 backdrop-blur-xl">
           <SidebarTrigger />
           {pendingReservations > 0 ? (
             <Button
-              className="gap-2"
               nativeButton={false}
               render={<AdminLink to={adminRoutes.reservations} />}
               size="sm"
               variant="secondary"
             >
+              <span
+                aria-hidden
+                className="admin-status-dot admin-status-dot--attention"
+              />
               {pendingReservations} demande
               {pendingReservations > 1 ? "s" : ""} à confirmer
             </Button>
           ) : (
-            <span className="text-muted-foreground text-sm">
-              Aucune demande en attente
+            <span className="admin-service-status text-sm">
+              <span aria-hidden className="admin-status-dot" />
+              Service prêt · aucune demande en attente
             </span>
           )}
           <div className="ml-auto flex items-center gap-1">
@@ -318,7 +323,7 @@ export function AdminShell({
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-7">{children}</main>
+        <main className="admin-main flex-1 p-4 md:p-7">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

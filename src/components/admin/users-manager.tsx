@@ -5,7 +5,7 @@ import {
   TrashIcon,
   UserPlusIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import type { BackOfficeUser } from "@/api/modules/users/model";
 import { type Column, DataTable } from "@/components/admin/data-table";
@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -62,12 +63,113 @@ const ROLE_LABELS: Record<string, string> = {
   editor: "Équipe de salle",
 };
 
+type EditableRole = "admin" | "editor";
+
+interface UsersManagerState {
+  email: string;
+  inviteOpen: boolean;
+  name: string;
+  password: string;
+  pendingDelete: BackOfficeUser | null;
+  promotedAccountIds: Set<string>;
+  role: EditableRole;
+  saving: boolean;
+  users: BackOfficeUser[];
+}
+
+type UsersManagerAction =
+  | { type: "inviteOpenChanged"; open: boolean }
+  | { type: "nameChanged"; value: string }
+  | { type: "emailChanged"; value: string }
+  | { type: "passwordChanged"; value: string }
+  | { type: "roleChanged"; role: EditableRole }
+  | { type: "savingChanged"; saving: boolean }
+  | { type: "pendingDeleteChanged"; user: BackOfficeUser | null }
+  | { type: "userCreated"; user: BackOfficeUser }
+  | { type: "userRoleUpdated"; id: string; role: string }
+  | { type: "userBanUpdated"; id: string; banned: boolean }
+  | { type: "userDeleted"; id: string }
+  | { type: "accountPromoted"; account: PendingAccount };
+
+function usersManagerReducer(
+  state: UsersManagerState,
+  action: UsersManagerAction
+): UsersManagerState {
+  switch (action.type) {
+    case "inviteOpenChanged":
+      return { ...state, inviteOpen: action.open };
+    case "nameChanged":
+      return { ...state, name: action.value };
+    case "emailChanged":
+      return { ...state, email: action.value };
+    case "passwordChanged":
+      return { ...state, password: action.value };
+    case "roleChanged":
+      return { ...state, role: action.role };
+    case "savingChanged":
+      return { ...state, saving: action.saving };
+    case "pendingDeleteChanged":
+      return { ...state, pendingDelete: action.user };
+    case "userCreated":
+      return {
+        ...state,
+        email: "",
+        inviteOpen: false,
+        name: "",
+        password: "",
+        users: [action.user, ...state.users],
+      };
+    case "userRoleUpdated":
+      return {
+        ...state,
+        users: state.users.map((user) =>
+          user.id === action.id ? { ...user, role: action.role } : user
+        ),
+      };
+    case "userBanUpdated":
+      return {
+        ...state,
+        users: state.users.map((user) =>
+          user.id === action.id ? { ...user, banned: action.banned } : user
+        ),
+      };
+    case "userDeleted":
+      return {
+        ...state,
+        users: state.users.filter((user) => user.id !== action.id),
+      };
+    case "accountPromoted":
+      return {
+        ...state,
+        promotedAccountIds: new Set(state.promotedAccountIds).add(
+          action.account.id
+        ),
+        users: [
+          {
+            banned: false,
+            banReason: null,
+            createdAt: action.account.createdAt,
+            email: action.account.email,
+            emailVerified: true,
+            id: action.account.id,
+            lastSessionAt: null,
+            name: action.account.name,
+            role: "editor",
+          },
+          ...state.users,
+        ],
+      };
+    default:
+      return state;
+  }
+}
+
 /**
  * L'écran n'affichait que la carte du compte connecté : aucune liste, aucune
  * invitation, aucun changement de rôle. Le plugin `admin` de Better Auth était
  * pourtant déjà installé.
  */
-export function UsersManager({
+function useUsersManager({
   initialUsers,
   pendingAccounts,
   currentUserId,
@@ -76,17 +178,41 @@ export function UsersManager({
   pendingAccounts: PendingAccount[];
   currentUserId: string;
 }) {
-  const [users, setUsers] = useState(initialUsers);
-  const [pendingList, setPendingList] = useState(pendingAccounts);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "editor">("editor");
-  const [saving, setSaving] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<BackOfficeUser | null>(
-    null
+  const [state, dispatch] = useReducer(usersManagerReducer, {
+    email: "",
+    inviteOpen: false,
+    name: "",
+    password: "",
+    pendingDelete: null,
+    promotedAccountIds: new Set<string>(),
+    role: "editor",
+    saving: false,
+    users: initialUsers,
+  });
+  const {
+    email,
+    inviteOpen,
+    name,
+    password,
+    pendingDelete,
+    promotedAccountIds,
+    role,
+    saving,
+    users,
+  } = state;
+  const pendingList = pendingAccounts.filter(
+    (account) => !promotedAccountIds.has(account.id)
   );
+  const setEmail = (value: string) => dispatch({ type: "emailChanged", value });
+  const setInviteOpen = (open: boolean) =>
+    dispatch({ open, type: "inviteOpenChanged" });
+  const setName = (value: string) => dispatch({ type: "nameChanged", value });
+  const setPassword = (value: string) =>
+    dispatch({ type: "passwordChanged", value });
+  const setPendingDelete = (user: BackOfficeUser | null) =>
+    dispatch({ type: "pendingDeleteChanged", user });
+  const setRole = (nextRole: EditableRole) =>
+    dispatch({ role: nextRole, type: "roleChanged" });
 
   const createUser = useSync(
     (
@@ -122,17 +248,18 @@ export function UsersManager({
       });
       return;
     }
-    setSaving(true);
+    dispatch({ saving: true, type: "savingChanged" });
     const { data, error } = await createUser({ email, name, password, role });
-    setSaving(false);
+    dispatch({ saving: false, type: "savingChanged" });
     if (error || !data) {
       toast.error("Création impossible", {
         description: apiErrorMessage(error, "Le compte n’a pas été créé."),
       });
       return;
     }
-    setUsers((current) => [
-      {
+    dispatch({
+      type: "userCreated",
+      user: {
         banned: false,
         banReason: null,
         createdAt: new Date(),
@@ -143,12 +270,7 @@ export function UsersManager({
         name,
         role,
       },
-      ...current,
-    ]);
-    setInviteOpen(false);
-    setName("");
-    setEmail("");
-    setPassword("");
+    });
     toast.success("Compte créé", {
       description: "Communiquez le mot de passe à son ou sa titulaire.",
     });
@@ -156,18 +278,10 @@ export function UsersManager({
 
   async function changeRole(user: BackOfficeUser, next: "admin" | "editor") {
     const previous = user.role;
-    setUsers((current) =>
-      current.map((entry) =>
-        entry.id === user.id ? { ...entry, role: next } : entry
-      )
-    );
+    dispatch({ id: user.id, role: next, type: "userRoleUpdated" });
     const { error } = await setRoleRequest({ id: user.id, role: next });
     if (error) {
-      setUsers((current) =>
-        current.map((entry) =>
-          entry.id === user.id ? { ...entry, role: previous } : entry
-        )
-      );
+      dispatch({ id: user.id, role: previous, type: "userRoleUpdated" });
       toast.error("Changement de rôle refusé", {
         description: apiErrorMessage(error, "Le rôle n’a pas été modifié."),
       });
@@ -185,11 +299,7 @@ export function UsersManager({
       });
       return;
     }
-    setUsers((current) =>
-      current.map((entry) =>
-        entry.id === user.id ? { ...entry, banned: next } : entry
-      )
-    );
+    dispatch({ banned: next, id: user.id, type: "userBanUpdated" });
     toast.success(
       next
         ? "Compte suspendu · ses sessions ont été révoquées"
@@ -202,7 +312,7 @@ export function UsersManager({
     if (!target) {
       return;
     }
-    setPendingDelete(null);
+    dispatch({ type: "pendingDeleteChanged", user: null });
     const { error } = await deleteRequest({ id: target.id });
     if (error) {
       toast.error("Suppression impossible", {
@@ -210,7 +320,7 @@ export function UsersManager({
       });
       return;
     }
-    setUsers((current) => current.filter((entry) => entry.id !== target.id));
+    dispatch({ id: target.id, type: "userDeleted" });
     toast.success("Compte supprimé");
   }
 
@@ -222,23 +332,7 @@ export function UsersManager({
       });
       return;
     }
-    setPendingList((current) =>
-      current.filter((entry) => entry.id !== account.id)
-    );
-    setUsers((current) => [
-      {
-        banned: false,
-        banReason: null,
-        createdAt: account.createdAt,
-        email: account.email,
-        emailVerified: true,
-        id: account.id,
-        lastSessionAt: null,
-        name: account.name,
-        role: "editor",
-      },
-      ...current,
-    ]);
+    dispatch({ account, type: "accountPromoted" });
     toast.success("Accès accordé à l’équipe de salle");
   }
 
@@ -276,8 +370,10 @@ export function UsersManager({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="admin">Administrateur</SelectItem>
-            <SelectItem value="editor">Équipe de salle</SelectItem>
+            <SelectGroup>
+              <SelectItem value="admin">Administrateur</SelectItem>
+              <SelectItem value="editor">Équipe de salle</SelectItem>
+            </SelectGroup>
           </SelectContent>
         </Select>
       ),
@@ -342,6 +438,59 @@ export function UsersManager({
     },
   ];
 
+  return {
+    columns,
+    confirmDelete,
+    currentUserId,
+    email,
+    invite,
+    inviteOpen,
+    name,
+    password,
+    pendingDelete,
+    pendingList,
+    promotePending,
+    role,
+    saving,
+    setEmail,
+    setInviteOpen,
+    setName,
+    setPassword,
+    setPendingDelete,
+    setRole,
+    users,
+  };
+}
+
+export function UsersManager(props: {
+  initialUsers: BackOfficeUser[];
+  pendingAccounts: PendingAccount[];
+  currentUserId: string;
+}) {
+  return <UsersManagerView {...useUsersManager(props)} />;
+}
+
+function UsersManagerView({
+  columns,
+  confirmDelete,
+  email,
+  invite,
+  inviteOpen,
+  name,
+  password,
+  pendingDelete,
+  pendingList,
+  promotePending,
+  role,
+  saving,
+  setEmail,
+  setInviteOpen,
+  setName,
+  setPassword,
+  setPendingDelete,
+  setRole,
+  users,
+}: ReturnType<typeof useUsersManager>) {
   return (
     <div className="flex flex-col gap-5">
       {pendingList.length > 0 ? (
@@ -442,12 +591,14 @@ export function UsersManager({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="editor">
-                      Équipe de salle — carte, réservations, contenu
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      Administrateur — accès complet
-                    </SelectItem>
+                    <SelectGroup>
+                      <SelectItem value="editor">
+                        Équipe de salle — carte, réservations, contenu
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        Administrateur — accès complet
+                      </SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>

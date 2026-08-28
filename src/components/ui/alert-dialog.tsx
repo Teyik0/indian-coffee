@@ -1,6 +1,7 @@
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
+import { usePortalContainer } from "@/components/ui/portal-scope";
 import { cn } from "@/lib/utils";
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
@@ -13,9 +14,18 @@ function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   );
 }
 
-function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
+function AlertDialogPortal({
+  container,
+  ...props
+}: AlertDialogPrimitive.Portal.Props) {
+  const scopedContainer = usePortalContainer();
+
   return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+    <AlertDialogPrimitive.Portal
+      container={container === undefined ? scopedContainer : container}
+      data-slot="alert-dialog-portal"
+      {...props}
+    />
   );
 }
 

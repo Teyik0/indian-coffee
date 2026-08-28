@@ -7,7 +7,7 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import type {
   ReservationAdminView,
@@ -58,24 +58,85 @@ function statusBadgeVariant(
 
 type Decision = "CONFIRMED" | "DECLINED" | "CANCELLED";
 
+interface ReservationDetailState {
+  conflict: string | null;
+  events: ReservationEventView[];
+  note: string;
+  pending: Decision | "NOTE" | null;
+  reservation: ReservationAdminView;
+}
+
+type ReservationDetailAction =
+  | { type: "requestStarted"; pending: Decision | "NOTE" }
+  | { type: "requestFinished" }
+  | { type: "conflictDetected"; message: string }
+  | { type: "noteChanged"; note: string }
+  | {
+      type: "reservationUpdated";
+      reservation: ReservationAdminView;
+      status: Decision;
+      eventNote: string | null;
+      fromStatus: ReservationStatus;
+    };
+
+function reservationDetailReducer(
+  state: ReservationDetailState,
+  action: ReservationDetailAction
+): ReservationDetailState {
+  switch (action.type) {
+    case "requestStarted":
+      return { ...state, conflict: null, pending: action.pending };
+    case "requestFinished":
+      return { ...state, pending: null };
+    case "conflictDetected":
+      return { ...state, conflict: action.message };
+    case "noteChanged":
+      return { ...state, note: action.note };
+    case "reservationUpdated":
+      return {
+        ...state,
+        events: [
+          ...state.events,
+          {
+            actorId: null,
+            actorName: "Vous",
+            createdAt: new Date(),
+            fromStatus: action.fromStatus,
+            id: `local-${state.events.length}`,
+            note: action.eventNote,
+            reservationId: action.reservation.id,
+            toStatus: action.status,
+          },
+        ],
+        note: action.reservation.adminNote ?? "",
+        reservation: action.reservation,
+      };
+    default:
+      return state;
+  }
+}
+
 /**
  * Le message et l'occasion saisis par le client étaient enregistrés puis jamais
  * affichés : l'équipe ne pouvait pas préparer une table pour un anniversaire ni
  * tenir compte d'une allergie. La note interne était aussi systématiquement
  * écrasée par une chaîne vide à chaque décision.
  */
-export function ReservationDetail({
+function useReservationDetail({
   reservation: initialReservation,
   events: initialEvents,
 }: {
   reservation: ReservationAdminView;
   events: ReservationEventView[];
 }) {
-  const [reservation, setReservation] = useState(initialReservation);
-  const [events, setEvents] = useState(initialEvents);
-  const [note, setNote] = useState(initialReservation.adminNote ?? "");
-  const [pending, setPending] = useState<Decision | "NOTE" | null>(null);
-  const [conflict, setConflict] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(reservationDetailReducer, {
+    conflict: null,
+    events: initialEvents,
+    note: initialReservation.adminNote ?? "",
+    pending: null,
+    reservation: initialReservation,
+  });
+  const { conflict, events, note, pending, reservation } = state;
 
   const mutate = useSync(
     (
@@ -88,14 +149,16 @@ export function ReservationDetail({
   );
 
   async function decide(status: Decision, withNote = false) {
-    setPending(withNote ? "NOTE" : status);
-    setConflict(null);
+    dispatch({
+      pending: withNote ? "NOTE" : status,
+      type: "requestStarted",
+    });
     const { data, error } = await mutate({
       adminNote: withNote ? note : undefined,
       status,
       version: reservation.version,
     });
-    setPending(null);
+    dispatch({ type: "requestFinished" });
 
     if (error || !data || !("id" in data)) {
       const message = apiErrorMessage(
@@ -103,7 +166,7 @@ export function ReservationDetail({
         "La réservation n’a pas pu être mise à jour."
       );
       if (apiErrorCode(error) === "VERSION_CONFLICT") {
-        setConflict(message);
+        dispatch({ message, type: "conflictDetected" });
       } else {
         toast.error("Mise à jour impossible", { description: message });
       }
@@ -111,26 +174,47 @@ export function ReservationDetail({
     }
 
     const updated = data as ReservationAdminView;
-    setReservation(updated);
-    setNote(updated.adminNote ?? "");
-    setEvents((current) => [
-      ...current,
-      {
-        actorId: null,
-        actorName: "Vous",
-        createdAt: new Date(),
-        fromStatus: reservation.status,
-        id: `local-${current.length}`,
-        note: withNote ? note || null : null,
-        reservationId: updated.id,
-        toStatus: status,
-      },
-    ]);
+    dispatch({
+      eventNote: withNote ? note || null : null,
+      fromStatus: reservation.status,
+      reservation: updated,
+      status,
+      type: "reservationUpdated",
+    });
     toast.success(statusToast(status));
   }
 
   const isPending = reservation.status === "PENDING";
 
+  return {
+    conflict,
+    decide,
+    events,
+    isPending,
+    note,
+    pending,
+    reservation,
+    setNote: (value: string) => dispatch({ note: value, type: "noteChanged" }),
+  };
+}
+
+export function ReservationDetail(props: {
+  reservation: ReservationAdminView;
+  events: ReservationEventView[];
+}) {
+  return <ReservationDetailView {...useReservationDetail(props)} />;
+}
+
+function ReservationDetailView({
+  conflict,
+  decide,
+  events,
+  isPending,
+  note,
+  pending,
+  reservation,
+  setNote,
+}: ReturnType<typeof useReservationDetail>) {
   return (
     <div className="flex flex-col gap-6">
       {conflict ? (
@@ -178,7 +262,10 @@ export function ReservationDetail({
                 <Button
                   nativeButton={false}
                   render={
-                    <a href={`tel:${reservation.phone.replace(/\s/g, "")}`} />
+                    <a
+                      aria-label={`Appeler ${reservation.phone}`}
+                      href={`tel:${reservation.phone.replace(/\s/g, "")}`}
+                    />
                   }
                   size="sm"
                   variant="outline"
@@ -188,7 +275,12 @@ export function ReservationDetail({
                 </Button>
                 <Button
                   nativeButton={false}
-                  render={<a href={`mailto:${reservation.email}`} />}
+                  render={
+                    <a
+                      aria-label={`Écrire à ${reservation.email}`}
+                      href={`mailto:${reservation.email}`}
+                    />
+                  }
                   size="sm"
                   variant="outline"
                 >

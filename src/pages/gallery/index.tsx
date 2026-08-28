@@ -1,6 +1,7 @@
+import * as Effect from "effect4/Effect";
 import { GalleryView } from "@/components/public/gallery-view";
 import { Section, SectionHeader } from "@/components/public/section";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { appUrl, headLinks, socialMeta } from "@/lib/head";
 import { route } from "../root";
 
@@ -16,23 +17,32 @@ export default route.page({
       url: `${appUrl}/gallery`,
     }),
   }),
-  loader: async () => {
-    const first = unwrapApiResult(
-      await getApi().api.gallery.get({ query: { page: 1 } })
-    );
-    const remaining = await Promise.all(
-      Array.from(
-        { length: Math.max(0, Math.ceil(first.total / first.pageSize) - 1) },
-        (_, index) =>
-          getApi()
-            .api.gallery.get({ query: { page: index + 2 } })
-            .then(unwrapApiResult)
-      )
-    );
-    return {
-      images: [first, ...remaining].flatMap((page) => page.images),
-    };
-  },
+  loader: () =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        const first = yield* apiEffect((signal) =>
+          getApi().api.gallery.get({ fetch: { signal }, query: { page: 1 } })
+        );
+        const remaining = yield* Effect.all(
+          Array.from(
+            {
+              length: Math.max(0, Math.ceil(first.total / first.pageSize) - 1),
+            },
+            (_, index) =>
+              apiEffect((signal) =>
+                getApi().api.gallery.get({
+                  fetch: { signal },
+                  query: { page: index + 2 },
+                })
+              )
+          ),
+          { concurrency: "unbounded" }
+        );
+        return {
+          images: [first, ...remaining].flatMap((page) => page.images),
+        };
+      })
+    ),
   component: ({ images }) => (
     <>
       <section className="madras-page-hero grain">

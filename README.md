@@ -17,9 +17,9 @@
 
 ## Stack
 
-- Bun 1.4, Furin, and Elysia;
+- Bun 1.4, `@teyik0/furin@0.3.0-alpha.1`, Elysia, and Effect 4 beta.102 (installed as `effect4`);
 - React 19.2, Tailwind CSS 4, and shadcn `base-nova` on Base UI;
-- Formisch and Valibot for forms and validation;
+- Valibot and Formisch for React forms; Effect Schema v4 and Standard Schema for Elysia validation;
 - Drizzle and Neon for persistence;
 - Better Auth for administration authentication;
 - UploadThing and `Bun.Image` for media processing;
@@ -30,7 +30,6 @@
 
 ```bash
 bun install
-bun run link:furin
 cp .env.example .env
 bun run db:migrate
 bun run db:migrate:furin
@@ -40,7 +39,7 @@ bun run dev
 
 The public website is available at `http://localhost:3000`, and the administration application is available at `http://localhost:3000/admin`.
 
-`bun run link:furin` registers `../furin/packages/core`, links it with `bun link --no-save`, and shares Indian Coffee's React, Elysia, and evlog peers with the linked package. The link is intentionally local and is not persisted in `package.json` or `bun.lock`.
+Furin is installed from the npm registry and pinned exactly. Upgrading it requires the complete typecheck, test, Doctor, build, and smoke-test validation.
 
 ## Application structure
 
@@ -51,6 +50,7 @@ src/
   pages/                 # Public Furin application
   admin/                 # Administration Furin application
   api/modules/           # Domain modules and Elysia API routes
+  api/effect/            # Services, Layers, errors, schemas and ManagedRuntime
   components/public/     # Public-only compositions
   components/admin/      # Administration-only compositions
   components/ui/         # Shared shadcn Base UI primitives
@@ -62,6 +62,16 @@ Public routes include `/`, `/menu`, `/menu/:slug`, `/gallery`, `/contact`, `/leg
 Two back-office roles share one permission matrix, defined in [src/api/lib/permissions.ts](./src/api/lib/permissions.ts) and enforced both by the Elysia macros and by the page guards. `admin` has every permission; `editor` — the dining-room role — manages the menu, gallery, content, hours, and reservations, but never accounts. Any other role, including the `customer` role a social sign-in creates, lands on `/admin/forbidden` rather than a bare 403.
 
 Opening hours are the single source of truth for the public "open now" badge, the `Restaurant` structured data, and reservation validation: [src/api/modules/content/opening-hours.service.ts](./src/api/modules/content/opening-hours.service.ts) resolves the weekly grid against exceptional closures, and the reservation service derives its bookable slots from it. Editing the hours in the back office therefore changes which reservations are accepted.
+
+### Effect conventions
+
+The application follows the rule **“Effect inside, Promise at framework boundaries”**. Domain and infrastructure dependencies are exposed as `Context.Service` values, assembled by Layers in `src/api/effect/layers.ts`, and executed by one `ManagedRuntime`. Elysia handlers, Furin loaders, React callbacks, Drizzle transaction callbacks, and vendor SDKs are the deliberate Promise boundaries.
+
+Expected failures use `Data.TaggedError` for Effect integration and Valibot for runtime validation. `DomainError` remains public and preserves the existing HTTP codes and payloads; persistence, authentication, storage, email, and image failures remain internal and are masked as `500 INTERNAL_ERROR`. Effect Schema remains the internal source of truth for API models, with `Schema.toStandardSchemaV1` as the Elysia adapter.
+
+Tests use `bun:test` with replaceable Layers. Time, crypto, storage, and other dependencies should be replaced through their services instead of global mocks.
+
+> Effect 4 is currently a beta and may introduce breaking changes; Effect 3 remains the production recommendation. The application beta is pinned exactly through the `effect4` npm alias because UploadThing still requires Effect 3 under the canonical `effect` package name. This keeps both dependency trees isolated without patches. Upgrading either version requires the complete typecheck, test, Doctor, and build validation.
 
 ## Database
 
@@ -100,4 +110,4 @@ The `furin build --target bun --compile embed` command validates the configured 
 
 Public pages use tagged ISR with a five-minute TTL. Administration pages remain uncached SSR, and replayable mutations use Furin's durable PostgreSQL sync runtime.
 
-CI and clean deployments are temporarily suspended while Indian Coffee targets the unreleased local Furin source. Once that version is published, replace `@teyik0/furin@0.2.0-alpha.5`, remove its patch, regenerate `bun.lock`, and reactivate deployment through [Dockerfile.vercel](./Dockerfile.vercel) or [vercel.json](./vercel.json).
+Clean installs and deployments use the published Furin package; no adjacent Furin checkout or local Bun link is required.

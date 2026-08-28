@@ -1,5 +1,8 @@
 pre-commit:
   jobs:
+    - name: react-doctor
+      run: bun run doctor --staged --no-score --blocking error
+
     - run: bun x ultracite fix
       glob:
         - "**/*.js"

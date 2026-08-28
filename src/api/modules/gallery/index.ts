@@ -1,4 +1,6 @@
 import { Elysia } from "elysia";
+import { GalleryService } from "@/api/effect/domain-services";
+import { runApiService } from "@/api/effect/runtime";
 import { betterAuthPlugin } from "@/api/plugins/better-auth.plugin";
 import {
   GalleryAdminQuerySchema,
@@ -9,14 +11,18 @@ import {
   GalleryQuerySchema,
   GalleryReorderSchema,
 } from "./model";
-import { galleryService } from "./service";
 
 export const galleryRouter = new Elysia({
   name: "gallery",
   prefix: "/api/gallery",
 }).get(
   "/",
-  ({ query }) => galleryService.getPage(query.page, query.collection),
+  ({ query, request }) =>
+    runApiService(
+      GalleryService,
+      (service) => service.getPage(query.page, query.collection),
+      request.signal
+    ),
   { query: GalleryQuerySchema }
 );
 
@@ -31,32 +37,87 @@ export const adminGalleryRouter = new Elysia({
   // inatteignables depuis le back-office.
   .get(
     "/",
-    ({ query }) =>
-      galleryService.getAdminPage(query.page, query.pageSize, query.collection),
+    ({ query, request }) =>
+      runApiService(
+        GalleryService,
+        (service) =>
+          service.getAdminPage(query.page, query.pageSize, query.collection),
+        request.signal
+      ),
     { onlyAdmin: true, query: GalleryAdminQuerySchema }
   )
-  .get("/media", () => galleryService.listAvailableMedia(), { onlyAdmin: true })
-  .get("/collections", () => galleryService.listCollections(), {
-    onlyAdmin: true,
-  })
-  .post("/collections", ({ body }) => galleryService.createCollection(body), {
-    body: GalleryCollectionSchema,
-    onlyAdmin: true,
-    sync: invalidateGallery,
-  })
-  .post("/", ({ body }) => galleryService.createEntry(body), {
-    body: GalleryEntryCreateSchema,
-    onlyAdmin: true,
-    sync: invalidateGallery,
-  })
-  .patch("/reorder", ({ body }) => galleryService.reorder(body.ids), {
-    body: GalleryReorderSchema,
-    onlyAdmin: true,
-    sync: invalidateGallery,
-  })
+  .get(
+    "/media",
+    ({ request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.listAvailableMedia(),
+        request.signal
+      ),
+    { onlyAdmin: true }
+  )
+  .get(
+    "/collections",
+    ({ request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.listCollections(),
+        request.signal
+      ),
+    {
+      onlyAdmin: true,
+    }
+  )
+  .post(
+    "/collections",
+    ({ body, request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.createCollection(body),
+        request.signal
+      ),
+    {
+      body: GalleryCollectionSchema,
+      onlyAdmin: true,
+      sync: invalidateGallery,
+    }
+  )
+  .post(
+    "/",
+    ({ body, request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.createEntry(body),
+        request.signal
+      ),
+    {
+      body: GalleryEntryCreateSchema,
+      onlyAdmin: true,
+      sync: invalidateGallery,
+    }
+  )
+  .patch(
+    "/reorder",
+    ({ body, request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.reorder(body.ids),
+        request.signal
+      ),
+    {
+      body: GalleryReorderSchema,
+      onlyAdmin: true,
+      sync: invalidateGallery,
+    }
+  )
   .patch(
     "/:id",
-    ({ params, body }) => galleryService.updateEntry(params.id, body),
+    ({ params, body, request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.updateEntry(params.id, body),
+        request.signal
+      ),
     {
       body: GalleryEntryUpdateSchema,
       onlyAdmin: true,
@@ -64,8 +125,17 @@ export const adminGalleryRouter = new Elysia({
       sync: invalidateGallery,
     }
   )
-  .delete("/:id", ({ params }) => galleryService.deleteEntry(params.id), {
-    onlyAdmin: true,
-    params: GalleryParamsSchema,
-    sync: invalidateGallery,
-  });
+  .delete(
+    "/:id",
+    ({ params, request }) =>
+      runApiService(
+        GalleryService,
+        (service) => service.deleteEntry(params.id),
+        request.signal
+      ),
+    {
+      onlyAdmin: true,
+      params: GalleryParamsSchema,
+      sync: invalidateGallery,
+    }
+  );

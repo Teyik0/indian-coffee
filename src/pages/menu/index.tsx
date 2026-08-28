@@ -1,8 +1,36 @@
+import * as Effect from "effect4/Effect";
 import { MenuView } from "@/components/public/menu-view";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { appUrl, headLinks, headScripts, socialMeta } from "@/lib/head";
 import { jsonLdScript, menuJsonLd } from "@/lib/structured-data";
 import { route } from "../root";
+
+const menuLoader = async () =>
+  await runLoaderEffect(
+    Effect.gen(function* () {
+      const categories = yield* apiEffect((signal) =>
+        getApi().api.menu.get({ fetch: { signal } })
+      );
+      return {
+        categories,
+        // La carte complète en données structurées : chaque plat devient un
+        // `MenuItem` avec son offre, ce qui la rend éligible aux résultats
+        // enrichis de Google.
+        jsonLd: jsonLdScript(
+          menuJsonLd(categories, { restaurantName: "Indian Coffee" }, appUrl)
+        ),
+        total: categories.reduce(
+          (sum, category) =>
+            sum +
+            category.sections.reduce(
+              (sectionSum, section) => sectionSum + section.items.length,
+              0
+            ),
+          0
+        ),
+      };
+    })
+  );
 
 export default route.page({
   component: ({ categories }) => (
@@ -49,26 +77,6 @@ export default route.page({
       type: "application/ld+json",
     }),
   }),
-  loader: async () => {
-    const categories = unwrapApiResult(await getApi().api.menu.get());
-    return {
-      categories,
-      // La carte complète en données structurées : chaque plat devient un
-      // `MenuItem` avec son offre, ce qui la rend éligible aux résultats
-      // enrichis de Google.
-      jsonLd: jsonLdScript(
-        menuJsonLd(categories, { restaurantName: "Indian Coffee" }, appUrl)
-      ),
-      total: categories.reduce(
-        (sum, category) =>
-          sum +
-          category.sections.reduce(
-            (sectionSum, section) => sectionSum + section.items.length,
-            0
-          ),
-        0
-      ),
-    };
-  },
+  loader: menuLoader,
   tags: ["content", "menu"],
 });

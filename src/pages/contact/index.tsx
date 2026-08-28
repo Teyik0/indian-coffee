@@ -1,3 +1,4 @@
+import * as Effect from "effect4/Effect";
 import { Clock3Icon, MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 import { OpenStatus } from "@/components/public/open-status";
 import { ReservationForm } from "@/components/public/reservation-form";
@@ -9,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { appUrl, headLinks, socialMeta } from "@/lib/head";
 import { route } from "../root";
 
@@ -25,11 +26,15 @@ export default route.page({
       url: `${appUrl}/contact`,
     }),
   }),
-  loader: async () => ({
-    calendar: unwrapApiResult(
-      await getApi().api.reservations.calendar.get({ query: { days: 60 } })
+  loader: () =>
+    runLoaderEffect(
+      apiEffect((signal) =>
+        getApi().api.reservations.calendar.get({
+          fetch: { signal },
+          query: { days: 60 },
+        })
+      ).pipe(Effect.map((calendar) => ({ calendar })))
     ),
-  }),
   component: ({
     calendar,
     reservationNotice,

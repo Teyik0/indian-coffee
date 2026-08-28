@@ -1,9 +1,13 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import { boundedString, standard } from "@/api/effect/schema";
 
-export const MediaUploadSchema = v.object({
-  alt: v.pipe(v.string(), v.trim(), v.minLength(3), v.maxLength(180)),
-  file: v.file("Sélectionnez une image valide."),
+export const MediaUploadEffectSchema = Schema.Struct({
+  alt: boundedString(3, 180, { trim: true }),
+  file: Schema.instanceOf(File, {
+    message: "Sélectionnez une image valide.",
+  }),
 });
+export const MediaUploadSchema = standard(MediaUploadEffectSchema);
 
 export interface MediaVariant {
   bytes: number;

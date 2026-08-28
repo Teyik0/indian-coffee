@@ -1,6 +1,12 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { MouseEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 import type { GalleryImage } from "@/api/modules/gallery/model";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +21,10 @@ import { MediaImage } from "./responsive-image";
 const PAGE_SIZE = 12;
 
 export function GalleryView({ images }: { images: GalleryImage[] }) {
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [visiblePage, setVisiblePage] = useState(1);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const visibleCount = Math.min(visiblePage * PAGE_SIZE, images.length);
   const visible = images.slice(0, visibleCount);
   const selected = selectedIndex === null ? null : images[selectedIndex];
   const hasMore = visibleCount < images.length;
@@ -62,6 +69,15 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
     step(1);
   }, [step]);
 
+  const handleViewerKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === "ArrowLeft") {
+      step(-1);
+    }
+    if (event.key === "ArrowRight") {
+      step(1);
+    }
+  });
+
   useEffect(() => {
     const loadMoreElement = loadMoreRef.current;
     if (!(hasMore && loadMoreElement)) {
@@ -69,14 +85,14 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
     }
 
     if (!("IntersectionObserver" in window)) {
-      setVisibleCount(images.length);
+      setVisiblePage(Number.POSITIVE_INFINITY);
       return;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          setVisibleCount(Math.min(visibleCount + PAGE_SIZE, images.length));
+          setVisiblePage((current) => current + 1);
         }
       },
       { rootMargin: "600px 0px" }
@@ -84,7 +100,7 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
 
     observer.observe(loadMoreElement);
     return () => observer.disconnect();
-  }, [hasMore, images.length, visibleCount]);
+  }, [hasMore]);
 
   // Flèches gauche/droite dans la visionneuse : attendu de tout diaporama.
   useEffect(() => {
@@ -92,16 +108,11 @@ export function GalleryView({ images }: { images: GalleryImage[] }) {
       return;
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowLeft") {
-        step(-1);
-      }
-      if (event.key === "ArrowRight") {
-        step(1);
-      }
+      handleViewerKeyDown(event);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedIndex, step]);
+  }, [selectedIndex]);
 
   return (
     <>

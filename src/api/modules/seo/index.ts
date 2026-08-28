@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
+import { MenuService } from "@/api/effect/domain-services";
+import { runApiService } from "@/api/effect/runtime";
 import { env } from "@/api/lib/env";
-import { menuService } from "../menu/service";
 
 function xmlEscape(value: string) {
   return value
@@ -30,8 +31,12 @@ const STATIC_ROUTES: SitemapEntry[] = [
  * back-office autrement que par un en-tête de réponse.
  */
 export const seoRouter = new Elysia({ name: "seo" })
-  .get("/sitemap.xml", async ({ set }) => {
-    const categories = await menuService.getPublic({});
+  .get("/sitemap.xml", async ({ request, set }) => {
+    const categories = await runApiService(
+      MenuService,
+      (service) => service.getPublic({}),
+      request.signal
+    );
     const lastmod = new Date().toISOString().slice(0, 10);
     const entries: SitemapEntry[] = [
       ...STATIC_ROUTES,

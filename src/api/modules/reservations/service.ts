@@ -280,12 +280,14 @@ export const reservationService = {
     };
 
     await enforceRateLimit(context.ip, input.email);
-    const requestHash = await sha256(JSON.stringify(input));
-    const existingRows = await db
-      .select()
-      .from(mutationRequests)
-      .where(eq(mutationRequests.key, context.idempotencyKey))
-      .limit(1);
+    const [requestHash, existingRows] = await Promise.all([
+      sha256(JSON.stringify(input)),
+      db
+        .select()
+        .from(mutationRequests)
+        .where(eq(mutationRequests.key, context.idempotencyKey))
+        .limit(1),
+    ]);
     const [existing] = existingRows;
     if (existing) {
       if (existing.requestHash !== requestHash) {
@@ -520,6 +522,7 @@ export const reservationService = {
         .where(eq(reservations.id, id))
         .limit(1);
 
+      // react-doctor-disable-next-line react-doctor/server-sequential-independent-await
       const rows = await tx
         .update(reservations)
         .set({

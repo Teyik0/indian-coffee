@@ -36,6 +36,9 @@ async function persist(theme: AdminTheme) {
   }
   window.localStorage.setItem(THEME_COOKIE, theme);
   document.documentElement.classList.toggle("dark", theme === "dark");
+  document
+    .querySelector(".admin-shell")
+    ?.classList.toggle("dark", theme === "dark");
 }
 
 export function ThemeToggle({ initialTheme }: { initialTheme: AdminTheme }) {

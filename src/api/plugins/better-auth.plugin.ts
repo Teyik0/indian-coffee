@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { Elysia } from "elysia";
 import { db } from "@/api/lib/db";
-import { env } from "@/api/lib/env";
+import { env, reveal } from "@/api/lib/env";
 import { hasAdminPermission, isBackOfficeRole } from "@/api/lib/permissions";
 import { schema } from "@/db/schema";
 
@@ -45,12 +45,14 @@ export const auth = betterAuth({
     window: 60,
   },
   secret:
-    env.BETTER_AUTH_SECRET ??
+    (env.BETTER_AUTH_SECRET ? reveal(env.BETTER_AUTH_SECRET) : undefined) ??
     "development-only-secret-change-before-production",
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: env.GOOGLE_CLIENT_ID ? reveal(env.GOOGLE_CLIENT_ID) : "",
+      clientSecret: env.GOOGLE_CLIENT_SECRET
+        ? reveal(env.GOOGLE_CLIENT_SECRET)
+        : "",
     },
   },
   trustedOrigins: [...trustedOrigins],

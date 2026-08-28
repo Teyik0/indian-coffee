@@ -39,30 +39,38 @@ export function MenuView({ categories }: { categories: MenuCategoryView[] }) {
     if (!deferredSearch) {
       return [];
     }
-    return categories
-      .map((category) => {
-        const sections = category.sections
-          .map((section) => ({
-            ...section,
-            items: section.items.filter((item) =>
-              `${item.name} ${item.description}`
-                .toLocaleLowerCase("fr-FR")
-                .includes(deferredSearch)
-            ),
-          }))
-          .filter((section) => section.items.length > 0);
-        return {
-          categoryId: category.id,
-          categoryName: category.name,
-          categorySlug: category.slug,
-          count: sections.reduce(
-            (total, section) => total + section.items.length,
-            0
-          ),
-          sections,
-        };
-      })
-      .filter((entry) => entry.count > 0);
+    return categories.flatMap((category) => {
+      const sections = category.sections.flatMap((section) => {
+        const items = section.items.filter((item) =>
+          `${item.name} ${item.description}`
+            .toLocaleLowerCase("fr-FR")
+            .includes(deferredSearch)
+        );
+        return items.length > 0
+          ? [
+              {
+                ...section,
+                items,
+              },
+            ]
+          : [];
+      });
+      const count = sections.reduce(
+        (total, section) => total + section.items.length,
+        0
+      );
+      return count > 0
+        ? [
+            {
+              categoryId: category.id,
+              categoryName: category.name,
+              categorySlug: category.slug,
+              count,
+              sections,
+            },
+          ]
+        : [];
+    });
   }, [categories, deferredSearch]);
 
   const totalMatches = matches.reduce((total, entry) => total + entry.count, 0);

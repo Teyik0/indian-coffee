@@ -1,0 +1,16 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "overrides": [
+      {
+        "files": ["src/api/modules/jobs/service.ts"],
+        "rules": ["react-doctor/async-await-in-loop"]
+      },
+      {
+        "files": [".furin/build/bun/server.js"],
+        "rules": ["react-doctor/artifact-env-leak"]
+      }
+    ],
+    "rules": ["deslop/unused-file"]
+  }
+}

@@ -26,28 +26,26 @@ type Scope = "public" | "admin";
 
 function filterMenu(categories: MenuCategoryView[], query: MenuQuery) {
   const search = query.search?.trim().toLocaleLowerCase("fr-FR");
-  return categories
-    .filter((category) => !query.category || category.slug === query.category)
-    .map((category) => ({
-      ...category,
-      sections: category.sections
-        .map((section) => ({
-          ...section,
-          items: section.items.filter((item) => {
-            if (item.status === "HIDDEN") {
-              return false;
-            }
-            if (!search) {
-              return true;
-            }
-            return `${item.name} ${item.description}`
-              .toLocaleLowerCase("fr-FR")
-              .includes(search);
-          }),
-        }))
-        .filter((section) => section.items.length > 0),
-    }))
-    .filter((category) => category.sections.length > 0);
+  return categories.flatMap((category) => {
+    if (query.category && category.slug !== query.category) {
+      return [];
+    }
+    const sections = category.sections.flatMap((section) => {
+      const items = section.items.filter((item) => {
+        if (item.status === "HIDDEN") {
+          return false;
+        }
+        if (!search) {
+          return true;
+        }
+        return `${item.name} ${item.description}`
+          .toLocaleLowerCase("fr-FR")
+          .includes(search);
+      });
+      return items.length > 0 ? [{ ...section, items }] : [];
+    });
+    return sections.length > 0 ? [{ ...category, sections }] : [];
+  });
 }
 
 function toMediaView(row: {
@@ -168,17 +166,21 @@ async function readMenu(scope: Scope): Promise<MenuCategoryView[]> {
     id: category.id,
     isVisible: category.isVisible,
     name: category.name,
-    sections: sections
-      .filter((section) => section.categoryId === category.id)
-      .map((section) => ({
-        description: section.description,
-        id: section.id,
-        isVisible: section.isVisible,
-        items: itemsBySection.get(section.id) ?? [],
-        name: section.name,
-        sortOrder: section.sortOrder,
-        version: section.version,
-      })),
+    sections: sections.flatMap((section) =>
+      section.categoryId === category.id
+        ? [
+            {
+              description: section.description,
+              id: section.id,
+              isVisible: section.isVisible,
+              items: itemsBySection.get(section.id) ?? [],
+              name: section.name,
+              sortOrder: section.sortOrder,
+              version: section.version,
+            },
+          ]
+        : []
+    ),
     slug: category.slug,
     sortOrder: category.sortOrder,
     version: category.version,
@@ -360,9 +362,12 @@ export const menuService = {
     const categories = await readMenu("public");
     return categories
       .flatMap((category) =>
-        category.sections.flatMap((section) => section.items)
+        category.sections.flatMap((section) =>
+          section.items.filter(
+            (item) => item.featured && item.status === "AVAILABLE"
+          )
+        )
       )
-      .filter((item) => item.featured && item.status === "AVAILABLE")
       .slice(0, limit);
   },
   async getPublic(query: MenuQuery = {}) {

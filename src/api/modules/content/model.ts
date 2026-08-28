@@ -1,132 +1,126 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import {
+  boundedInt,
+  boundedString,
+  Email,
+  IsoDate,
+  mutableArray,
+  standard,
+  UrlString,
+} from "@/api/effect/schema";
 import { UuidSchema, VersionSchema } from "../shared";
 import type { ResolvedDay } from "./opening-hours.service";
 
-const OptionalUrlSchema = v.optional(
-  v.union([
-    v.pipe(v.string(), v.url("Indiquez une URL valide.")),
-    v.literal(""),
-  ])
+const OptionalUrlSchema = Schema.optional(
+  Schema.Union([UrlString, Schema.Literal("")])
 );
 
-const TimeSchema = v.pipe(
-  v.string(),
-  v.regex(/^\d{2}:\d{2}(:\d{2})?$/, "Utilisez le format HH:MM.")
+const TimeSchema = Schema.String.check(
+  Schema.isPattern(/^\d{2}:\d{2}(:\d{2})?$/, {
+    message: "Utilisez le format HH:MM.",
+  })
 );
 
-export const SiteSettingsSchema = v.object({
-  addressLine: v.pipe(v.string(), v.minLength(5), v.maxLength(160)),
-  city: v.pipe(v.string(), v.minLength(2), v.maxLength(80)),
-  email: v.pipe(v.string(), v.email()),
+export const SiteSettingsEffectSchema = Schema.Struct({
+  addressLine: boundedString(5, 160),
+  city: boundedString(2, 80),
+  email: Email,
   facebookUrl: OptionalUrlSchema,
   instagramUrl: OptionalUrlSchema,
-  mapUrl: v.pipe(v.string(), v.url()),
-  phone: v.pipe(v.string(), v.minLength(10), v.maxLength(30)),
-  postalCode: v.pipe(v.string(), v.regex(/^\d{5}$/)),
-  reservationNotice: v.pipe(v.string(), v.minLength(10), v.maxLength(300)),
-  restaurantName: v.pipe(v.string(), v.minLength(2), v.maxLength(80)),
-  tagline: v.pipe(v.string(), v.minLength(10), v.maxLength(180)),
+  mapUrl: UrlString,
+  phone: boundedString(10, 30),
+  postalCode: Schema.String.check(Schema.isPattern(/^\d{5}$/)),
+  reservationNotice: boundedString(10, 300),
+  restaurantName: boundedString(2, 80),
+  tagline: boundedString(10, 180),
   version: VersionSchema,
 });
+export const SiteSettingsSchema = standard(SiteSettingsEffectSchema);
 
 /** Bloc éditorial de l'accueil : jusqu'ici en base mais absent du back-office. */
-export const HomeContentSchema = v.object({
-  eyebrow: v.pipe(v.string(), v.minLength(3), v.maxLength(80)),
-  heroIntro: v.pipe(v.string(), v.minLength(20), v.maxLength(400)),
-  heroMediaId: v.optional(v.union([UuidSchema, v.literal("")])),
-  heroTitle: v.pipe(v.string(), v.minLength(5), v.maxLength(120)),
-  storyBody: v.pipe(v.string(), v.minLength(20), v.maxLength(1200)),
-  storyMediaId: v.optional(v.union([UuidSchema, v.literal("")])),
-  storyTitle: v.pipe(v.string(), v.minLength(5), v.maxLength(120)),
+export const HomeContentEffectSchema = Schema.Struct({
+  eyebrow: boundedString(3, 80),
+  heroIntro: boundedString(20, 400),
+  heroMediaId: Schema.optional(Schema.Union([UuidSchema, Schema.Literal("")])),
+  heroTitle: boundedString(5, 120),
+  storyBody: boundedString(20, 1200),
+  storyMediaId: Schema.optional(Schema.Union([UuidSchema, Schema.Literal("")])),
+  storyTitle: boundedString(5, 120),
   version: VersionSchema,
 });
+export const HomeContentSchema = standard(HomeContentEffectSchema);
 
 /** Réglages qui gouvernent la validation des réservations. */
-export const ReservationSettingsSchema = v.object({
-  bookingHorizonDays: v.pipe(
-    v.number(),
-    v.integer(),
-    v.minValue(1),
-    v.maxValue(365)
-  ),
-  lastServiceMinutes: v.pipe(
-    v.number(),
-    v.integer(),
-    v.minValue(0),
-    v.maxValue(180)
-  ),
-  leadTimeMinutes: v.pipe(
-    v.number(),
-    v.integer(),
-    v.minValue(0),
-    v.maxValue(2880)
-  ),
-  maxCoversPerSlot: v.pipe(
-    v.number(),
-    v.integer(),
-    v.minValue(1),
-    v.maxValue(500)
-  ),
-  maxPartySize: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
-  slotMinutes: v.pipe(v.number(), v.integer(), v.minValue(5), v.maxValue(120)),
+export const ReservationSettingsEffectSchema = Schema.Struct({
+  bookingHorizonDays: boundedInt(1, 365),
+  lastServiceMinutes: boundedInt(0, 180),
+  leadTimeMinutes: boundedInt(0, 2880),
+  maxCoversPerSlot: boundedInt(1, 500),
+  maxPartySize: boundedInt(1, 100),
+  slotMinutes: boundedInt(5, 120),
 });
-
-export const WeeklyHoursSchema = v.object({
-  days: v.pipe(
-    v.array(
-      v.object({
-        dayOfWeek: v.pipe(
-          v.number(),
-          v.integer(),
-          v.minValue(1),
-          v.maxValue(7)
-        ),
-        isClosed: v.boolean(),
-        ranges: v.pipe(
-          v.array(
-            v.pipe(
-              v.object({
-                closesAt: TimeSchema,
-                label: v.optional(v.union([v.string(), v.null()])),
-                opensAt: TimeSchema,
-              }),
-              v.check(
-                (range) => range.opensAt < range.closesAt,
-                "L’heure de fermeture doit suivre l’heure d’ouverture."
-              )
-            )
-          ),
-          v.maxLength(3, "Trois services par jour au maximum.")
-        ),
-      })
-    ),
-    v.length(7, "La grille doit couvrir les sept jours.")
-  ),
-});
-
-export const SpecialHoursSchema = v.pipe(
-  v.object({
-    closesAt: v.optional(v.union([TimeSchema, v.literal("")])),
-    day: v.pipe(v.string(), v.isoDate("Choisissez une date valide.")),
-    isClosed: v.boolean(),
-    label: v.optional(v.pipe(v.string(), v.maxLength(120))),
-    opensAt: v.optional(v.union([TimeSchema, v.literal("")])),
-  }),
-  v.check(
-    (input) => input.isClosed || Boolean(input.opensAt && input.closesAt),
-    "Renseignez les horaires exceptionnels ou cochez « fermé »."
-  )
+export const ReservationSettingsSchema = standard(
+  ReservationSettingsEffectSchema
 );
 
-export const SpecialHoursParamsSchema = v.object({ id: UuidSchema });
+const HoursRangeSchema = Schema.Struct({
+  closesAt: TimeSchema,
+  label: Schema.optional(Schema.NullOr(Schema.String)),
+  opensAt: TimeSchema,
+}).check(
+  Schema.makeFilter((range) => range.opensAt < range.closesAt, {
+    message: "L’heure de fermeture doit suivre l’heure d’ouverture.",
+  })
+);
 
-export type SiteSettingsInput = v.InferOutput<typeof SiteSettingsSchema>;
-export type HomeContentInput = v.InferOutput<typeof HomeContentSchema>;
-export type ReservationSettingsInput = v.InferOutput<
-  typeof ReservationSettingsSchema
->;
-export type WeeklyHoursFormInput = v.InferOutput<typeof WeeklyHoursSchema>;
-export type SpecialHoursInput = v.InferOutput<typeof SpecialHoursSchema>;
+const WeeklyDaySchema = Schema.Struct({
+  dayOfWeek: boundedInt(1, 7),
+  isClosed: Schema.Boolean,
+  ranges: mutableArray(HoursRangeSchema).check(
+    Schema.isMaxLength(3, {
+      message: "Trois services par jour au maximum.",
+    })
+  ),
+});
+
+export const WeeklyHoursEffectSchema = Schema.Struct({
+  days: mutableArray(WeeklyDaySchema).check(
+    Schema.makeFilter((days) => days.length === 7, {
+      message: "La grille doit couvrir les sept jours.",
+    })
+  ),
+});
+export const WeeklyHoursSchema = standard(WeeklyHoursEffectSchema);
+
+export const SpecialHoursEffectSchema = Schema.Struct({
+  closesAt: Schema.optional(Schema.Union([TimeSchema, Schema.Literal("")])),
+  day: IsoDate,
+  isClosed: Schema.Boolean,
+  label: Schema.optional(boundedString(0, 120)),
+  opensAt: Schema.optional(Schema.Union([TimeSchema, Schema.Literal("")])),
+}).check(
+  Schema.makeFilter(
+    (input) => input.isClosed || Boolean(input.opensAt && input.closesAt),
+    {
+      message: "Renseignez les horaires exceptionnels ou cochez « fermé ».",
+    }
+  )
+);
+export const SpecialHoursSchema = standard(SpecialHoursEffectSchema);
+
+export const SpecialHoursParamsEffectSchema = Schema.Struct({
+  id: UuidSchema,
+});
+export const SpecialHoursParamsSchema = standard(
+  SpecialHoursParamsEffectSchema
+);
+
+export type SiteSettingsInput = typeof SiteSettingsEffectSchema.Type;
+export type HomeContentInput = typeof HomeContentEffectSchema.Type;
+export type ReservationSettingsInput =
+  typeof ReservationSettingsEffectSchema.Type;
+export type WeeklyHoursFormInput = typeof WeeklyHoursEffectSchema.Type;
+export type SpecialHoursInput = typeof SpecialHoursEffectSchema.Type;
 
 export interface OpenState {
   closesAt: string | null;

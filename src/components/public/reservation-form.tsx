@@ -112,12 +112,7 @@ type FieldName =
 
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: le parcours multi-étapes centralise volontairement validation et disponibilité.
-export function ReservationForm({
-  calendar,
-}: {
-  calendar: ReservationCalendar;
-}) {
+function useReservationForm(calendar: ReservationCalendar) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -148,9 +143,9 @@ export function ReservationForm({
     : undefined;
   const minDate = minDay ? isoDayToLocalDate(minDay) : undefined;
   const maxDate = maxDay ? isoDayToLocalDate(maxDay) : undefined;
-  const closedDates = days
-    .filter((day) => day.isClosed)
-    .map((day) => isoDayToLocalDate(day.day));
+  const closedDates = days.flatMap((day) =>
+    day.isClosed ? [isoDayToLocalDate(day.day)] : []
+  );
   const handleDateChange = useCallback((date: Date | undefined) => {
     setRequestedDate(date ? localDateToIsoDay(date) : "");
   }, []);
@@ -271,34 +266,12 @@ export function ReservationForm({
     toast.success("Demande envoyée", { description: data.message });
   }
 
-  if (reference) {
-    return (
-      <div className="flex min-h-80 flex-col items-center justify-center gap-5 rounded-xl bg-secondary/60 p-8 text-center">
-        <span className="flex size-12 items-center justify-center rounded-full bg-leaf text-primary-foreground">
-          <CheckIcon />
-        </span>
-        <div>
-          <h2 className="font-display text-3xl">Demande bien reçue</h2>
-          <p className="mt-2 text-muted-foreground">
-            Référence : <strong className="font-mono">{reference}</strong>
-          </p>
-        </div>
-        <p className="max-w-md">
-          Votre table n’est pas encore réservée : notre équipe confirme la
-          demande par courriel, en général dans la journée.
-        </p>
-      </div>
-    );
-  }
-
   const slots = availability?.slots ?? [];
   const availableSlots = slots.filter((slot) => slot.isAvailable);
-  const slotGroups = (availability?.services ?? [])
-    .map((service) => ({
-      service,
-      slots: slots.filter((slot) => isSlotInService(slot, service)),
-    }))
-    .filter((group) => group.slots.length > 0);
+  const slotGroups = (availability?.services ?? []).flatMap((service) => {
+    const serviceSlots = slots.filter((slot) => isSlotInService(slot, service));
+    return serviceSlots.length > 0 ? [{ service, slots: serviceSlots }] : [];
+  });
   const slotItems = slots.map((slot) => ({
     label: formatTime(slot.time),
     value: slot.time,
@@ -314,6 +287,116 @@ export function ReservationForm({
     }
   }
 
+  return {
+    availability,
+    availableSlots,
+    calendar,
+    closedDates,
+    consent,
+    email,
+    errors,
+    fullName,
+    handleDateChange,
+    handleTimeChange,
+    honeypot,
+    loadingSlots,
+    maxDate,
+    message,
+    minDate,
+    occasion,
+    openDays,
+    partySize,
+    pending,
+    phone,
+    reference,
+    requestedDate,
+    requestedDateValue,
+    requestedTime,
+    setConsent,
+    setEmail,
+    setFullName,
+    setHoneypot,
+    setMessage,
+    setOccasion,
+    setPartySize,
+    setPhone,
+    slotGroups,
+    slotItems,
+    slotPlaceholder,
+    submit,
+  };
+}
+
+export function ReservationForm({
+  calendar,
+}: {
+  calendar: ReservationCalendar;
+}) {
+  const form = useReservationForm(calendar);
+  return form.reference ? (
+    <ReservationSuccess reference={form.reference} />
+  ) : (
+    renderReservationForm(form)
+  );
+}
+
+function ReservationSuccess({ reference }: { reference: string }) {
+  return (
+    <div className="flex min-h-80 flex-col items-center justify-center gap-5 rounded-xl bg-secondary/60 p-8 text-center">
+      <span className="flex size-12 items-center justify-center rounded-full bg-leaf text-primary-foreground">
+        <CheckIcon />
+      </span>
+      <div>
+        <h2 className="font-display text-3xl">Demande bien reçue</h2>
+        <p className="mt-2 text-muted-foreground">
+          Référence : <strong className="font-mono">{reference}</strong>
+        </p>
+      </div>
+      <p className="max-w-md">
+        Votre table n’est pas encore réservée : notre équipe confirme la demande
+        par courriel, en général dans la journée.
+      </p>
+    </div>
+  );
+}
+
+function renderReservationForm({
+  availability,
+  availableSlots,
+  calendar,
+  closedDates,
+  consent,
+  email,
+  errors,
+  fullName,
+  handleDateChange,
+  handleTimeChange,
+  honeypot,
+  loadingSlots,
+  maxDate,
+  message,
+  minDate,
+  occasion,
+  openDays,
+  partySize,
+  pending,
+  phone,
+  requestedDate,
+  requestedDateValue,
+  requestedTime,
+  setConsent,
+  setEmail,
+  setFullName,
+  setHoneypot,
+  setMessage,
+  setOccasion,
+  setPartySize,
+  setPhone,
+  slotGroups,
+  slotItems,
+  slotPlaceholder,
+  submit,
+}: ReturnType<typeof useReservationForm>) {
   return (
     <form className="flex flex-col gap-7" onSubmit={submit}>
       <FieldGroup>

@@ -55,5 +55,3 @@ export function hasAdminPermission(
 export function isBackOfficeRole(role: string | null | undefined) {
   return Boolean(role && role in ROLE_PERMISSIONS);
 }
-
-export const BACK_OFFICE_ROLES = Object.keys(ROLE_PERMISSIONS);

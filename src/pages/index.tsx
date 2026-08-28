@@ -1,5 +1,6 @@
 import { Link } from "@teyik0/furin/link";
 import { renderServerComponent } from "@teyik0/furin/rsc";
+import * as Effect from "effect4/Effect";
 import {
   ArrowRightIcon,
   Clock3Icon,
@@ -7,11 +8,12 @@ import {
   PhoneIcon,
   UtensilsIcon,
 } from "lucide-react";
+import type { MenuCategoryView } from "@/api/modules/menu/model";
 import { MediaImage } from "@/components/public/responsive-image";
 import { Section, SectionHeader } from "@/components/public/section";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { formatPriceRange, SPICE_LABELS } from "@/lib/format";
 import { appUrl, headLinks, headScripts, socialMeta } from "@/lib/head";
 import { jsonLdScript, restaurantJsonLd } from "@/lib/structured-data";
@@ -24,6 +26,109 @@ function splitHeroTitle(title: string): [string, string] {
     return [title, ""];
   }
   return [title.slice(0, titleBreak), title.slice(titleBreak + 1).trim()];
+}
+
+function collectSignatures(categories: MenuCategoryView[]) {
+  const signatures: MenuCategoryView["sections"][number]["items"] = [];
+  for (const category of categories) {
+    for (const section of category.sections) {
+      for (const item of section.items) {
+        if (item.featured) {
+          signatures.push(item);
+        }
+        if (signatures.length === 3) {
+          return signatures;
+        }
+      }
+    }
+  }
+  return signatures;
+}
+
+async function homeLoader() {
+  return await runLoaderEffect(
+    Effect.gen(function* () {
+      const { categories, content, gallery } = yield* Effect.all(
+        {
+          categories: apiEffect((signal) =>
+            getApi().api.menu.get({ fetch: { signal } })
+          ),
+          content: apiEffect((signal) =>
+            getApi().api.content.get({ fetch: { signal } })
+          ),
+          gallery: apiEffect((signal) =>
+            getApi().api.gallery.get({ fetch: { signal }, query: { page: 1 } })
+          ),
+        },
+        { concurrency: "unbounded" }
+      );
+      const [heroLead, heroAccent] = splitHeroTitle(content.hero.title);
+
+      const signatures = collectSignatures(categories);
+
+      const heroRsc = yield* Effect.tryPromise(() =>
+        renderServerComponent(
+          <section className="madras-hero grain relative overflow-hidden bg-tamarind text-paper">
+            <div className="mx-auto grid min-h-[calc(100svh-5rem)] max-w-[90rem] items-center lg:grid-cols-[0.82fr_1.18fr]">
+              <div className="reveal relative z-10 flex flex-col justify-center px-5 py-20 lg:px-8 lg:py-28">
+                <p className="madras-hero-location">
+                  {content.hero.eyebrow}
+                  <span aria-hidden />
+                  Maison depuis 2012
+                </p>
+                <h1 className="madras-hero-title">
+                  {heroLead}
+                  {heroAccent ? (
+                    <>
+                      <br />
+                      <em>{heroAccent}</em>
+                    </>
+                  ) : null}
+                </h1>
+                <p className="mt-9 max-w-xl text-lead text-paper/72">
+                  {content.hero.intro}
+                </p>
+                <div className="mt-9 flex flex-wrap items-center gap-4">
+                  <a className="madras-hero-primary-action" href="/menu">
+                    Découvrir la carte <span aria-hidden>→</span>
+                  </a>
+                  <a className="madras-hero-secondary-action" href="/contact">
+                    Réserver une table
+                  </a>
+                </div>
+              </div>
+              <div className="madras-hero-image reveal reveal-late relative min-h-96 lg:min-h-[calc(100svh-8rem)]">
+                <img
+                  alt="Table de spécialités indiennes servie chez Indian Coffee"
+                  className="absolute inset-0 size-full object-cover"
+                  decoding="async"
+                  fetchPriority="high"
+                  height={432}
+                  src="/public/cover1.webp"
+                  width={1000}
+                />
+                <div className="madras-hero-image-shade" />
+                <div className="madras-hero-service">
+                  <span>Ce soir</span>
+                  <strong>Service jusqu’à 22h30</strong>
+                </div>
+              </div>
+            </div>
+            <p aria-hidden className="madras-hero-mark">
+              IC
+            </p>
+          </section>
+        )
+      );
+
+      return {
+        gallery: gallery.images.slice(0, 5),
+        heroRsc,
+        jsonLd: jsonLdScript(restaurantJsonLd(content, appUrl)),
+        signatures,
+      };
+    })
+  );
 }
 
 export default route.page({
@@ -301,102 +406,6 @@ export default route.page({
       type: "application/ld+json",
     }),
   }),
-  loader: async () => {
-    const [menuResult, galleryResult, contentResult] = await Promise.all([
-      getApi().api.menu.get(),
-      getApi().api.gallery.get({ query: { page: 1 } }),
-      getApi().api.content.get(),
-    ]);
-    const categories = unwrapApiResult(menuResult);
-    const gallery = unwrapApiResult(galleryResult);
-    const content = unwrapApiResult(contentResult);
-    const [heroLead, heroAccent] = splitHeroTitle(content.hero.title);
-
-    // Les plats mis en avant portent désormais leur propre visuel : la version
-    // précédente piochait dans un tableau d'images codées en dur, sans aucun
-    // rapport avec le plat affiché.
-    // Une seule passe, avec arrêt dès trois plats trouvés : la carte compte plus
-    // de deux cents entrées et cette page est servie à chaque visiteur.
-    const signatures: (typeof categories)[number]["sections"][number]["items"] =
-      [];
-    for (const category of categories) {
-      for (const section of category.sections) {
-        for (const item of section.items) {
-          if (item.featured) {
-            signatures.push(item);
-          }
-          if (signatures.length === 3) {
-            break;
-          }
-        }
-        if (signatures.length === 3) {
-          break;
-        }
-      }
-      if (signatures.length === 3) {
-        break;
-      }
-    }
-
-    return {
-      gallery: gallery.images.slice(0, 5),
-      heroRsc: await renderServerComponent(
-        <section className="madras-hero grain relative overflow-hidden bg-tamarind text-paper">
-          <div className="mx-auto grid min-h-[calc(100svh-5rem)] max-w-[90rem] items-center lg:grid-cols-[0.82fr_1.18fr]">
-            <div className="reveal relative z-10 flex flex-col justify-center px-5 py-20 lg:px-8 lg:py-28">
-              <p className="madras-hero-location">
-                {content.hero.eyebrow}
-                <span aria-hidden />
-                Maison depuis 2012
-              </p>
-              <h1 className="madras-hero-title">
-                {heroLead}
-                {heroAccent ? (
-                  <>
-                    <br />
-                    <em>{heroAccent}</em>
-                  </>
-                ) : null}
-              </h1>
-              <p className="mt-9 max-w-xl text-lead text-paper/72">
-                {content.hero.intro}
-              </p>
-              <div className="mt-9 flex flex-wrap items-center gap-4">
-                <a className="madras-hero-primary-action" href="/menu">
-                  Découvrir la carte
-                  <span aria-hidden>→</span>
-                </a>
-                <a className="madras-hero-secondary-action" href="/contact">
-                  Réserver une table
-                </a>
-              </div>
-            </div>
-
-            <div className="madras-hero-image reveal reveal-late relative min-h-96 lg:min-h-[calc(100svh-8rem)]">
-              <img
-                alt="Table de spécialités indiennes servie chez Indian Coffee"
-                className="absolute inset-0 size-full object-cover"
-                decoding="async"
-                fetchPriority="high"
-                height={432}
-                src="/public/cover1.webp"
-                width={1000}
-              />
-              <div className="madras-hero-image-shade" />
-              <div className="madras-hero-service">
-                <span>Ce soir</span>
-                <strong>Service jusqu’à 22h30</strong>
-              </div>
-            </div>
-          </div>
-          <p aria-hidden className="madras-hero-mark">
-            IC
-          </p>
-        </section>
-      ),
-      jsonLd: jsonLdScript(restaurantJsonLd(content, appUrl)),
-      signatures,
-    };
-  },
+  loader: homeLoader,
   tags: ["content", "menu", "gallery"],
 });

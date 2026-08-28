@@ -7,7 +7,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 import type { GalleryAdminEntry } from "@/api/modules/gallery/model";
 import { TablePagination } from "@/components/admin/data-table";
@@ -55,13 +55,134 @@ interface Collection {
   slug: string;
 }
 
+interface GalleryManagerState {
+  draftAlt: string;
+  draftCaption: string;
+  draftVisible: boolean;
+  editing: GalleryAdminEntry | null;
+  entries: GalleryAdminEntry[];
+  loading: boolean;
+  page: number;
+  pageCount: number;
+  pendingDelete: GalleryAdminEntry | null;
+  saving: boolean;
+  total: number;
+}
+
+type GalleryManagerAction =
+  | { type: "loadingChanged"; loading: boolean }
+  | {
+      type: "pageLoaded";
+      entries: GalleryAdminEntry[];
+      page: number;
+      pageCount: number;
+      total: number;
+    }
+  | { type: "editorOpened"; entry: GalleryAdminEntry }
+  | { type: "editorClosed" }
+  | { type: "draftAltChanged"; value: string }
+  | { type: "draftCaptionChanged"; value: string }
+  | { type: "draftVisibleChanged"; visible: boolean }
+  | { type: "savingChanged"; saving: boolean }
+  | {
+      type: "entrySaved";
+      alt: string;
+      caption: string;
+      id: string;
+      visible: boolean;
+    }
+  | { type: "entriesReplaced"; entries: GalleryAdminEntry[] }
+  | { type: "visibilityChanged"; id: string; visible: boolean }
+  | { type: "entryRestored"; entry: GalleryAdminEntry }
+  | { type: "pendingDeleteChanged"; entry: GalleryAdminEntry | null }
+  | { type: "entryDeleted"; id: string };
+
+function galleryManagerReducer(
+  state: GalleryManagerState,
+  action: GalleryManagerAction
+): GalleryManagerState {
+  switch (action.type) {
+    case "loadingChanged":
+      return { ...state, loading: action.loading };
+    case "pageLoaded":
+      return {
+        ...state,
+        entries: action.entries,
+        page: action.page,
+        pageCount: action.pageCount,
+        total: action.total,
+      };
+    case "editorOpened":
+      return {
+        ...state,
+        draftAlt: action.entry.alt,
+        draftCaption: action.entry.caption,
+        draftVisible: action.entry.isVisible,
+        editing: action.entry,
+      };
+    case "editorClosed":
+      return { ...state, editing: null };
+    case "draftAltChanged":
+      return { ...state, draftAlt: action.value };
+    case "draftCaptionChanged":
+      return { ...state, draftCaption: action.value };
+    case "draftVisibleChanged":
+      return { ...state, draftVisible: action.visible };
+    case "savingChanged":
+      return { ...state, saving: action.saving };
+    case "entrySaved":
+      return {
+        ...state,
+        editing: null,
+        entries: state.entries.map((entry) =>
+          entry.id === action.id
+            ? {
+                ...entry,
+                alt: action.alt,
+                caption: action.caption,
+                isVisible: action.visible,
+              }
+            : entry
+        ),
+      };
+    case "entriesReplaced":
+      return { ...state, entries: action.entries };
+    case "visibilityChanged":
+      return {
+        ...state,
+        entries: state.entries.map((entry) =>
+          entry.id === action.id
+            ? { ...entry, isVisible: action.visible }
+            : entry
+        ),
+      };
+    case "entryRestored":
+      return {
+        ...state,
+        entries: state.entries.map((entry) =>
+          entry.id === action.entry.id ? action.entry : entry
+        ),
+      };
+    case "pendingDeleteChanged":
+      return { ...state, pendingDelete: action.entry };
+    case "entryDeleted":
+      return {
+        ...state,
+        entries: state.entries.filter((entry) => entry.id !== action.id),
+        total: Math.max(0, state.total - 1),
+      };
+    default:
+      return state;
+  }
+}
+
 /**
  * La galerie n'offrait qu'un formulaire d'upload : aucune liste, donc aucun
  * moyen de corriger une légende, de masquer une photo, de la réordonner ni de
  * la supprimer. La route d'API forçait par ailleurs la page 1, rendant 28 des
  * 40 images inatteignables.
  */
-export function GalleryManager({
+function useGalleryManager({
   initialEntries,
   initialPage,
   initialPageCount,
@@ -74,19 +195,44 @@ export function GalleryManager({
   initialTotal: number;
   collections: Collection[];
 }) {
-  const [entries, setEntries] = useState(initialEntries);
-  const [page, setPage] = useState(initialPage);
-  const [pageCount, setPageCount] = useState(initialPageCount);
-  const [total, setTotal] = useState(initialTotal);
-  const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState<GalleryAdminEntry | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<GalleryAdminEntry | null>(
-    null
-  );
-  const [draftAlt, setDraftAlt] = useState("");
-  const [draftCaption, setDraftCaption] = useState("");
-  const [draftVisible, setDraftVisible] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [state, dispatch] = useReducer(galleryManagerReducer, {
+    draftAlt: "",
+    draftCaption: "",
+    draftVisible: true,
+    editing: null,
+    entries: initialEntries,
+    loading: false,
+    page: initialPage,
+    pageCount: initialPageCount,
+    pendingDelete: null,
+    saving: false,
+    total: initialTotal,
+  });
+  const {
+    draftAlt,
+    draftCaption,
+    draftVisible,
+    editing,
+    entries,
+    loading,
+    page,
+    pageCount,
+    pendingDelete,
+    saving,
+    total,
+  } = state;
+  const setDraftAlt = (value: string) =>
+    dispatch({ type: "draftAltChanged", value });
+  const setDraftCaption = (value: string) =>
+    dispatch({ type: "draftCaptionChanged", value });
+  const setDraftVisible = (visible: boolean) =>
+    dispatch({ type: "draftVisibleChanged", visible });
+  const setEditing = (entry: GalleryAdminEntry | null) =>
+    dispatch(
+      entry ? { entry, type: "editorOpened" } : { type: "editorClosed" }
+    );
+  const setPendingDelete = (entry: GalleryAdminEntry | null) =>
+    dispatch({ entry, type: "pendingDeleteChanged" });
 
   const updateEntry = useSync(
     (
@@ -117,28 +263,28 @@ export function GalleryManager({
   );
 
   async function loadPage(next: number) {
-    setLoading(true);
+    dispatch({ loading: true, type: "loadingChanged" });
     const { data, error } = await api.api.admin.gallery.get({
       query: { page: next, pageSize: 24 },
     });
-    setLoading(false);
+    dispatch({ loading: false, type: "loadingChanged" });
     if (error || !data) {
       toast.error("Chargement impossible", {
         description: apiErrorMessage(error, "Réessayez dans un instant."),
       });
       return;
     }
-    setEntries(data.entries as GalleryAdminEntry[]);
-    setPage(data.page);
-    setPageCount(data.pageCount);
-    setTotal(data.total);
+    dispatch({
+      entries: data.entries as GalleryAdminEntry[],
+      page: data.page,
+      pageCount: data.pageCount,
+      total: data.total,
+      type: "pageLoaded",
+    });
   }
 
   function openEditor(entry: GalleryAdminEntry) {
-    setEditing(entry);
-    setDraftAlt(entry.alt);
-    setDraftCaption(entry.caption);
-    setDraftVisible(entry.isVisible);
+    dispatch({ entry, type: "editorOpened" });
   }
 
   async function saveEditor() {
@@ -152,43 +298,33 @@ export function GalleryManager({
       });
       return;
     }
-    setSaving(true);
+    dispatch({ saving: true, type: "savingChanged" });
     const { error } = await updateEntry({
       alt: draftAlt.trim(),
       caption: draftCaption.trim(),
       id: editing.id,
       isVisible: draftVisible,
     });
-    setSaving(false);
+    dispatch({ saving: false, type: "savingChanged" });
     if (error) {
       toast.error("Enregistrement impossible", {
         description: apiErrorMessage(error, "L’image n’a pas été modifiée."),
       });
       return;
     }
-    setEntries((current) =>
-      current.map((entry) =>
-        entry.id === editing.id
-          ? {
-              ...entry,
-              alt: draftAlt.trim(),
-              caption: draftCaption.trim(),
-              isVisible: draftVisible,
-            }
-          : entry
-      )
-    );
-    setEditing(null);
+    dispatch({
+      alt: draftAlt.trim(),
+      caption: draftCaption.trim(),
+      id: editing.id,
+      type: "entrySaved",
+      visible: draftVisible,
+    });
     toast.success("Image mise à jour");
   }
 
   async function toggleVisible(entry: GalleryAdminEntry) {
     const next = !entry.isVisible;
-    setEntries((current) =>
-      current.map((item) =>
-        item.id === entry.id ? { ...item, isVisible: next } : item
-      )
-    );
+    dispatch({ id: entry.id, type: "visibilityChanged", visible: next });
     const { error } = await updateEntry({
       alt: entry.alt,
       caption: entry.caption,
@@ -196,9 +332,7 @@ export function GalleryManager({
       isVisible: next,
     });
     if (error) {
-      setEntries((current) =>
-        current.map((item) => (item.id === entry.id ? entry : item))
-      );
+      dispatch({ entry, type: "entryRestored" });
       toast.error("Modification impossible");
       return;
     }
@@ -217,11 +351,11 @@ export function GalleryManager({
       return;
     }
     next.splice(target, 0, moved);
-    setEntries(next);
+    dispatch({ entries: next, type: "entriesReplaced" });
 
     const { error } = await reorder({ ids: next.map((item) => item.id) });
     if (error) {
-      setEntries(entries);
+      dispatch({ entries, type: "entriesReplaced" });
       toast.error("Réordonnancement impossible");
     }
   }
@@ -231,7 +365,7 @@ export function GalleryManager({
     if (!target) {
       return;
     }
-    setPendingDelete(null);
+    dispatch({ entry: null, type: "pendingDeleteChanged" });
     const { error } = await removeEntry({ id: target.id });
     if (error) {
       toast.error("Suppression impossible", {
@@ -239,13 +373,74 @@ export function GalleryManager({
       });
       return;
     }
-    setEntries((current) => current.filter((item) => item.id !== target.id));
-    setTotal((current) => Math.max(0, current - 1));
+    dispatch({ id: target.id, type: "entryDeleted" });
     toast.success("Image supprimée", {
       description: "Les fichiers seront retirés du stockage sous peu.",
     });
   }
 
+  return {
+    collections,
+    confirmDelete,
+    draftAlt,
+    draftCaption,
+    draftVisible,
+    editing,
+    entries,
+    loadPage,
+    loading,
+    move,
+    openEditor,
+    page,
+    pageCount,
+    pendingDelete,
+    saveEditor,
+    saving,
+    setDraftAlt,
+    setDraftCaption,
+    setDraftVisible,
+    setEditing,
+    setPendingDelete,
+    toggleVisible,
+    total,
+  };
+}
+
+export function GalleryManager(props: {
+  initialEntries: GalleryAdminEntry[];
+  initialPage: number;
+  initialPageCount: number;
+  initialTotal: number;
+  collections: Collection[];
+}) {
+  return <GalleryManagerView {...useGalleryManager(props)} />;
+}
+
+function GalleryManagerView({
+  collections,
+  confirmDelete,
+  draftAlt,
+  draftCaption,
+  draftVisible,
+  editing,
+  entries,
+  loadPage,
+  loading,
+  move,
+  openEditor,
+  page,
+  pageCount,
+  pendingDelete,
+  saveEditor,
+  saving,
+  setDraftAlt,
+  setDraftCaption,
+  setDraftVisible,
+  setEditing,
+  setPendingDelete,
+  toggleVisible,
+  total,
+}: ReturnType<typeof useGalleryManager>) {
   if (entries.length === 0) {
     return (
       <Empty className="border">

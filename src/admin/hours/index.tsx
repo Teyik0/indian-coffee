@@ -1,26 +1,43 @@
+import * as Effect from "effect4/Effect";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
 import { HoursManager } from "@/components/admin/hours-manager";
 import { AdminPage } from "@/components/admin/page-shell";
 import { Badge } from "@/components/ui/badge";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { route } from "../root";
 
 export default route.page({
-  loader: async ({ request, redirect }) => {
-    await requireBackOfficeSession(request, redirect, "hours:write");
-    const [week, exceptions, content] = await Promise.all([
-      getApi()
-        .api.admin.content.hours.get({ headers: request.headers })
-        .then(unwrapApiResult),
-      getApi()
-        .api.admin.content["special-hours"].get({ headers: request.headers })
-        .then(unwrapApiResult),
-      getApi()
-        .api.admin.content.get({ headers: request.headers })
-        .then(unwrapApiResult),
-    ]);
-    return { exceptions, openState: content.openState, week };
-  },
+  loader: ({ request, redirect }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        yield* requireBackOfficeSession(request, redirect, "hours:write");
+        const { content, exceptions, week } = yield* Effect.all(
+          {
+            week: apiEffect((signal) =>
+              getApi().api.admin.content.hours.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+            exceptions: apiEffect((signal) =>
+              getApi().api.admin.content["special-hours"].get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+            content: apiEffect((signal) =>
+              getApi().api.admin.content.get({
+                fetch: { signal },
+                headers: request.headers,
+              })
+            ),
+          },
+          { concurrency: "unbounded" }
+        );
+        return { exceptions, openState: content.openState, week };
+      }),
+      request.signal
+    ),
   component: ({ week, exceptions, openState }) => {
     let statusLabel = "Fermé";
     if (openState.isOpen) {

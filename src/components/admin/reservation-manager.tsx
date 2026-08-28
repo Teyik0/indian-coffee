@@ -83,11 +83,7 @@ function statusToast(status: "CANCELLED" | "CONFIRMED" | "DECLINED") {
  * bien que le service du jour se retrouvait sous des mois de réservations
  * passées. Ni filtre, ni recherche, ni accès au message laissé par le client.
  */
-export function ReservationManager({
-  initialResult,
-}: {
-  initialResult: ListResult;
-}) {
+function useReservationManager(initialResult: ListResult) {
   const [result, setResult] = useState(initialResult);
   const [view, setView] = useState<ViewKey>("pending");
   const [search, setSearch] = useState("");
@@ -317,6 +313,38 @@ export function ReservationManager({
     },
   ];
 
+  return {
+    changePage,
+    changeView,
+    columns,
+    loading,
+    result,
+    search,
+    setSearch,
+    submitSearch,
+    view,
+  };
+}
+
+export function ReservationManager({
+  initialResult,
+}: {
+  initialResult: ListResult;
+}) {
+  return <ReservationManagerView {...useReservationManager(initialResult)} />;
+}
+
+function ReservationManagerView({
+  changePage,
+  changeView,
+  columns,
+  loading,
+  result,
+  search,
+  setSearch,
+  submitSearch,
+  view,
+}: ReturnType<typeof useReservationManager>) {
   return (
     <div className="flex flex-col gap-5">
       <Tabs onValueChange={changeView} value={view}>

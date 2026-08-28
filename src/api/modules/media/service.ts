@@ -41,7 +41,7 @@ export const mediaService = {
         422
       );
     }
-    const client = getUploadThing();
+    const client = await getUploadThing();
     if (!client) {
       throw new DomainError(
         "MEDIA_NOT_CONFIGURED",
@@ -98,9 +98,20 @@ export const mediaService = {
     const results = await client.uploadFiles(
       prepared.map((entry) => entry.file)
     );
-    const successfulKeys = results.flatMap((result) =>
-      result.data ? [result.data.key] : []
-    );
+    // UploadThing 7 builds this class with Effect Schema 3. Its generated
+    // declaration loses the class fields when the application uses Effect 4,
+    // although the runtime payload still follows this documented shape.
+    const uploadData = (result: (typeof results)[number]) =>
+      result.data as
+        | undefined
+        | {
+            readonly key: string;
+            readonly ufsUrl: string;
+          };
+    const successfulKeys = results.flatMap((result) => {
+      const data = uploadData(result);
+      return data ? [data.key] : [];
+    });
     if (results.some((result) => result.error || !result.data)) {
       if (successfulKeys.length > 0) {
         await client.deleteFiles(successfulKeys);
@@ -113,7 +124,8 @@ export const mediaService = {
     }
 
     const uploaded = prepared.map((entry, index) => {
-      const data = results[index]?.data;
+      const result = results[index];
+      const data = result ? uploadData(result) : undefined;
       if (!data) {
         throw new DomainError(
           "UPLOAD_FAILED",

@@ -1,38 +1,14 @@
-import * as v from "valibot";
+export { DomainError } from "@/api/effect/errors";
 
-export const UuidSchema = v.pipe(v.string(), v.uuid("Identifiant invalide."));
-export const VersionSchema = v.pipe(v.number(), v.integer(), v.minValue(1));
+import { Uuid, Version } from "@/api/effect/schema";
+
+export const UuidSchema = Uuid;
+export const VersionSchema = Version;
 
 export interface ApiError {
   code: string;
   fieldErrors?: Record<string, string[]>;
   message: string;
-}
-
-export class DomainError extends Error {
-  readonly code: string;
-  readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 429 | 502;
-  readonly fieldErrors?: Record<string, string[]>;
-
-  constructor(
-    code: string,
-    message: string,
-    status: DomainError["status"] = 400,
-    fieldErrors?: Record<string, string[]>,
-    options?: ErrorOptions
-  ) {
-    super(message, options);
-    this.code = code;
-    this.status = status;
-    this.fieldErrors = fieldErrors;
-  }
-}
-
-export function formatPrice(priceCents: number) {
-  return new Intl.NumberFormat("fr-FR", {
-    currency: "EUR",
-    style: "currency",
-  }).format(priceCents / 100);
 }
 
 export async function sha256(input: string | ArrayBuffer) {

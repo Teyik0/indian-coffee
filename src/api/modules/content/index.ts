@@ -1,4 +1,9 @@
 import { Elysia } from "elysia";
+import {
+  ContentService,
+  OpeningHoursService,
+} from "@/api/effect/domain-services";
+import { runApiService } from "@/api/effect/runtime";
 import { betterAuthPlugin } from "@/api/plugins/better-auth.plugin";
 import {
   HomeContentSchema,
@@ -8,8 +13,6 @@ import {
   SpecialHoursSchema,
   WeeklyHoursSchema,
 } from "./model";
-import { openingHoursService } from "./opening-hours.service";
-import { contentService } from "./service";
 
 const invalidateContent = { invalidate: { tags: ["content"] } } as const;
 
@@ -18,50 +21,111 @@ export const contentRouter = new Elysia({
   prefix: "/api/admin/content",
 })
   .use(betterAuthPlugin)
-  .get("/", () => contentService.get(), { onlyAdmin: true })
-  .patch("/settings", ({ body }) => contentService.updateSettings(body), {
-    body: SiteSettingsSchema,
-    onlyAdmin: true,
-    sync: invalidateContent,
-  })
-  .patch("/home", ({ body }) => contentService.updateHome(body), {
-    body: HomeContentSchema,
-    onlyAdmin: true,
-    sync: invalidateContent,
-  })
+  .get(
+    "/",
+    ({ request }) =>
+      runApiService(ContentService, (service) => service.get(), request.signal),
+    { onlyAdmin: true }
+  )
+  .patch(
+    "/settings",
+    ({ body, request }) =>
+      runApiService(
+        ContentService,
+        (service) => service.updateSettings(body),
+        request.signal
+      ),
+    {
+      body: SiteSettingsSchema,
+      onlyAdmin: true,
+      sync: invalidateContent,
+    }
+  )
+  .patch(
+    "/home",
+    ({ body, request }) =>
+      runApiService(
+        ContentService,
+        (service) => service.updateHome(body),
+        request.signal
+      ),
+    {
+      body: HomeContentSchema,
+      onlyAdmin: true,
+      sync: invalidateContent,
+    }
+  )
   .patch(
     "/reservation-settings",
-    ({ body }) => contentService.updateReservationSettings(body),
+    ({ body, request }) =>
+      runApiService(
+        ContentService,
+        (service) => service.updateReservationSettings(body),
+        request.signal
+      ),
     {
       body: ReservationSettingsSchema,
       onlyAdmin: true,
       sync: invalidateContent,
     }
   )
-  .get("/hours", () => openingHoursService.getWeek(), { onlyAdmin: true })
+  .get(
+    "/hours",
+    ({ request }) =>
+      runApiService(
+        OpeningHoursService,
+        (service) => service.getWeek(),
+        request.signal
+      ),
+    { onlyAdmin: true }
+  )
   .put(
     "/hours",
-    ({ body }) =>
-      openingHoursService.replaceWeek(
-        body.days.map((day) => ({
-          dayOfWeek: day.dayOfWeek,
-          isClosed: day.isClosed,
-          ranges: day.ranges,
-        }))
+    ({ body, request }) =>
+      runApiService(
+        OpeningHoursService,
+        (service) =>
+          service.replaceWeek(
+            body.days.map((day) => ({
+              dayOfWeek: day.dayOfWeek,
+              isClosed: day.isClosed,
+              ranges: day.ranges,
+            }))
+          ),
+        request.signal
       ),
     { body: WeeklyHoursSchema, onlyAdmin: true, sync: invalidateContent }
   )
-  .get("/special-hours", () => openingHoursService.getUpcomingExceptions(), {
-    onlyAdmin: true,
-  })
+  .get(
+    "/special-hours",
+    ({ request }) =>
+      runApiService(
+        OpeningHoursService,
+        (service) => service.getUpcomingExceptions(),
+        request.signal
+      ),
+    {
+      onlyAdmin: true,
+    }
+  )
   .put(
     "/special-hours",
-    ({ body }) => openingHoursService.upsertException(body),
+    ({ body, request }) =>
+      runApiService(
+        OpeningHoursService,
+        (service) => service.upsertException(body),
+        request.signal
+      ),
     { body: SpecialHoursSchema, onlyAdmin: true, sync: invalidateContent }
   )
   .delete(
     "/special-hours/:id",
-    ({ params }) => openingHoursService.deleteException(params.id),
+    ({ params, request }) =>
+      runApiService(
+        OpeningHoursService,
+        (service) => service.deleteException(params.id),
+        request.signal
+      ),
     {
       onlyAdmin: true,
       params: SpecialHoursParamsSchema,

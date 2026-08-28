@@ -4,6 +4,7 @@ import {
   type SubmitHandler,
   useForm,
 } from "@formisch/react";
+import * as Effect from "effect4/Effect";
 import { LogInIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -35,22 +36,41 @@ export function LoginForm() {
     schema: LoginSchema,
   });
 
-  const submit: SubmitHandler<typeof LoginSchema> = async (output) => {
+  const submit: SubmitHandler<typeof LoginSchema> = (output) => {
     setPending("email");
-    const result = await authClient.signIn.email(output);
-    setPending(null);
-    if (result.error) {
-      toast.error("Connexion refusée", {
-        description: "Vérifiez votre email et votre mot de passe.",
-      });
-      return;
-    }
-    window.location.href = "/admin";
+    const program = authClient.signIn.email(output).pipe(
+      Effect.match({
+        onFailure: () => false,
+        onSuccess: () => true,
+      }),
+      Effect.tap((success) =>
+        Effect.sync(() => {
+          setPending(null);
+          if (success) {
+            window.location.href = "/admin";
+          } else {
+            toast.error("Connexion refusée", {
+              description: "Vérifiez votre email et votre mot de passe.",
+            });
+          }
+        })
+      )
+    );
+    Effect.runPromise(program);
   };
 
-  async function signInWithGoogle() {
+  function signInWithGoogle() {
     setPending("google");
-    await authClient.signIn.social({ provider: "google" });
+    Effect.runPromise(
+      authClient.signIn.social({ provider: "google" }).pipe(
+        Effect.catchCause(() =>
+          Effect.sync(() => {
+            setPending(null);
+            toast.error("Connexion Google indisponible");
+          })
+        )
+      )
+    );
   }
 
   return (
@@ -108,8 +128,6 @@ export function LoginForm() {
         </Button>
       </Form>
 
-      {/* Le bouton Google était rendu en style primaire, à égalité visuelle avec
-          la soumission du formulaire : deux actions principales concurrentes. */}
       <div className="flex items-center gap-3">
         <Separator className="flex-1" />
         <span className="text-muted-foreground text-xs">ou</span>

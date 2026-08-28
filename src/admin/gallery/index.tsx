@@ -1,3 +1,4 @@
+import * as Effect from "effect4/Effect";
 import { requireBackOfficeSession } from "@/api/lib/protected-admin-page";
 import { GalleryManager } from "@/components/admin/gallery-manager";
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
@@ -9,20 +10,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
 import { route } from "../root";
 
 export default route.page({
-  loader: async ({ request, redirect }) => {
-    await requireBackOfficeSession(request, redirect, "gallery:write");
-    const gallery = unwrapApiResult(
-      await getApi().api.admin.gallery.get({
-        headers: request.headers,
-        query: { page: 1, pageSize: 24 },
-      })
-    );
-    return { gallery };
-  },
+  loader: ({ request, redirect }) =>
+    runLoaderEffect(
+      Effect.gen(function* () {
+        yield* requireBackOfficeSession(request, redirect, "gallery:write");
+        const gallery = yield* apiEffect((signal) =>
+          getApi().api.admin.gallery.get({
+            fetch: { signal },
+            headers: request.headers,
+            query: { page: 1, pageSize: 24 },
+          })
+        );
+        return { gallery };
+      }),
+      request.signal
+    ),
   component: ({ gallery }) => (
     <AdminPage
       description={`${gallery.total} images. Trois formats WebP et un aperçu flouté sont générés automatiquement à l’envoi.`}

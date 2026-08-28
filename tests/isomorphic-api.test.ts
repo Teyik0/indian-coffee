@@ -1,11 +1,14 @@
 import { expect, spyOn, test } from "bun:test";
-import { getApi, unwrapApiResult } from "@/lib/api-client";
+import * as Effect from "effect4/Effect";
+import { apiEffect, getApi } from "@/lib/api-client";
 
 test("server-side Eden calls execute in-process without localhost fetch", async () => {
   const fetchSpy = spyOn(globalThis, "fetch");
 
   try {
-    const health = unwrapApiResult(await getApi().api.health.get());
+    const health = await Effect.runPromise(
+      apiEffect(() => getApi().api.health.get())
+    );
     expect(health.status).toBe("ok");
     expect(fetchSpy).not.toHaveBeenCalled();
   } finally {

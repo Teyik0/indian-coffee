@@ -49,8 +49,6 @@ export function PublicHeader({
 
   return (
     <>
-      {/* Lien d'évitement : la navigation au clavier commençait par traverser
-          tout l'en-tête avant d'atteindre le contenu. */}
       <a
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
         href="#contenu"
@@ -172,8 +170,6 @@ export function PublicHeader({
         </div>
       </header>
 
-      {/* Barre d'appel collante : sur mobile, l'appel est de loin la première
-          action attendue d'un site de restaurant. */}
       <div className="print-hidden fixed inset-x-0 bottom-0 z-40 flex gap-2 border-paper/15 border-t bg-tamarind p-3 text-paper lg:hidden">
         <a
           className={cn(buttonVariants({ variant: "outline" }), "flex-1")}

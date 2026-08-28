@@ -73,14 +73,14 @@ function toDraft(week: ResolvedDay[]): DayDraft[] {
  * exprimer un jour de fermeture. Les valeurs saisies ici gouvernent désormais la
  * validation des réservations, le badge « ouvert maintenant » et le JSON-LD.
  */
-export function HoursManager({
+function useHoursManager({
   initialWeek,
   initialExceptions,
 }: {
   initialWeek: ResolvedDay[];
   initialExceptions: SpecialHour[];
 }) {
-  const [days, setDays] = useState<DayDraft[]>(toDraft(initialWeek));
+  const [days, setDays] = useState<DayDraft[]>(() => toDraft(initialWeek));
   const [baseline, setBaseline] = useState(() =>
     JSON.stringify(toDraft(initialWeek))
   );
@@ -236,6 +236,67 @@ export function HoursManager({
 
   const today = new Date().toISOString().slice(0, 10);
 
+  return {
+    baseline,
+    days,
+    deleteException,
+    dirty,
+    error,
+    exceptions,
+    newClosed,
+    newCloses,
+    newDay,
+    newLabel,
+    newOpens,
+    pending,
+    savingException,
+    setDays,
+    setNewClosed,
+    setNewCloses,
+    setNewDay,
+    setNewLabel,
+    setNewOpens,
+    submitException,
+    submitWeek,
+    today,
+    updateDay,
+    updateRange,
+  };
+}
+
+export function HoursManager(props: {
+  initialWeek: ResolvedDay[];
+  initialExceptions: SpecialHour[];
+}) {
+  return <HoursManagerView {...useHoursManager(props)} />;
+}
+
+function HoursManagerView({
+  baseline,
+  days,
+  deleteException,
+  dirty,
+  error,
+  exceptions,
+  newClosed,
+  newCloses,
+  newDay,
+  newLabel,
+  newOpens,
+  pending,
+  savingException,
+  setDays,
+  setNewClosed,
+  setNewCloses,
+  setNewDay,
+  setNewLabel,
+  setNewOpens,
+  submitException,
+  submitWeek,
+  today,
+  updateDay,
+  updateRange,
+}: ReturnType<typeof useHoursManager>) {
   return (
     <div className="flex flex-col gap-6">
       {error ? (

@@ -1,13 +1,26 @@
-import * as v from "valibot";
+import * as Schema from "effect4/Schema";
+import {
+  boundedNumberInput,
+  boundedString,
+  defaulted,
+  mutableArray,
+  standard,
+} from "@/api/effect/schema";
 import { UuidSchema, VersionSchema } from "../shared";
 
-export const MenuStatusSchema = v.picklist([
+export const MenuStatusEffectSchema = Schema.Literals([
   "AVAILABLE",
   "UNAVAILABLE",
   "HIDDEN",
 ]);
+export const MenuStatusSchema = standard(MenuStatusEffectSchema);
 
-export const SpiceLevelSchema = v.picklist(["MILD", "MEDIUM", "HOT"]);
+export const SpiceLevelEffectSchema = Schema.Literals([
+  "MILD",
+  "MEDIUM",
+  "HOT",
+]);
+export const SpiceLevelSchema = standard(SpiceLevelEffectSchema);
 
 /** Régimes proposés au back-office, repris dans la légende publique. */
 export const DIETARY_FLAGS = [
@@ -19,120 +32,135 @@ export const DIETARY_FLAGS = [
   "Contient des fruits à coque",
 ] as const;
 
-export const MenuQuerySchema = v.object({
-  category: v.optional(v.string()),
-  search: v.optional(v.string()),
+export const MenuQueryEffectSchema = Schema.Struct({
+  category: Schema.optional(Schema.String),
+  search: Schema.optional(Schema.String),
 });
+export const MenuQuerySchema = standard(MenuQueryEffectSchema);
 
-export const UpdateMenuStatusSchema = v.object({
-  status: MenuStatusSchema,
+export const UpdateMenuStatusEffectSchema = Schema.Struct({
+  status: MenuStatusEffectSchema,
   version: VersionSchema,
 });
+export const UpdateMenuStatusSchema = standard(UpdateMenuStatusEffectSchema);
 
-export const MenuParamsSchema = v.object({ id: UuidSchema });
+export const MenuParamsEffectSchema = Schema.Struct({ id: UuidSchema });
+export const MenuParamsSchema = standard(MenuParamsEffectSchema);
 
-const SlugSchema = v.pipe(
-  v.string(),
-  v.trim(),
-  v.minLength(2),
-  v.maxLength(80),
-  v.regex(
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-    "Utilisez des minuscules et des tirets."
-  )
+const SlugSchema = Schema.Trim.check(
+  Schema.isMinLength(2),
+  Schema.isMaxLength(80),
+  Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: "Utilisez des minuscules et des tirets.",
+  })
 );
 
-const OptionalMediaSchema = v.optional(v.union([UuidSchema, v.literal("")]));
+const OptionalMediaSchema = Schema.optional(
+  Schema.Union([UuidSchema, Schema.Literal("")])
+);
 
-export const MenuCategoryCreateSchema = v.object({
-  description: v.optional(v.pipe(v.string(), v.maxLength(400)), ""),
-  isVisible: v.optional(v.boolean(), true),
+export const MenuCategoryCreateEffectSchema = Schema.Struct({
+  description: defaulted(boundedString(0, 400), ""),
+  isVisible: defaulted(Schema.Boolean, true),
   mediaId: OptionalMediaSchema,
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(80)),
+  name: boundedString(2, 80, { trim: true }),
   slug: SlugSchema,
 });
+export const MenuCategoryCreateSchema = standard(
+  MenuCategoryCreateEffectSchema
+);
 
-export const MenuCategoryUpdateSchema = v.object({
-  ...MenuCategoryCreateSchema.entries,
+export const MenuCategoryUpdateEffectSchema = Schema.Struct({
+  ...MenuCategoryCreateEffectSchema.fields,
   version: VersionSchema,
 });
+export const MenuCategoryUpdateSchema = standard(
+  MenuCategoryUpdateEffectSchema
+);
 
-export const MenuSectionCreateSchema = v.object({
+export const MenuSectionCreateEffectSchema = Schema.Struct({
   categoryId: UuidSchema,
-  description: v.optional(v.pipe(v.string(), v.maxLength(400)), ""),
-  isVisible: v.optional(v.boolean(), true),
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(80)),
+  description: defaulted(boundedString(0, 400), ""),
+  isVisible: defaulted(Schema.Boolean, true),
+  name: boundedString(2, 80, { trim: true }),
 });
+export const MenuSectionCreateSchema = standard(MenuSectionCreateEffectSchema);
 
-export const MenuSectionUpdateSchema = v.object({
-  description: v.optional(v.pipe(v.string(), v.maxLength(400)), ""),
-  isVisible: v.optional(v.boolean(), true),
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(80)),
+export const MenuSectionUpdateEffectSchema = Schema.Struct({
+  description: defaulted(boundedString(0, 400), ""),
+  isVisible: defaulted(Schema.Boolean, true),
+  name: boundedString(2, 80, { trim: true }),
   version: VersionSchema,
 });
+export const MenuSectionUpdateSchema = standard(MenuSectionUpdateEffectSchema);
 
-const VariantSchema = v.object({
-  detail: v.optional(v.union([v.pipe(v.string(), v.maxLength(160)), v.null()])),
-  id: v.optional(UuidSchema),
-  label: v.optional(v.union([v.pipe(v.string(), v.maxLength(60)), v.null()])),
-  priceCents: v.pipe(
-    v.union([v.string(), v.number()]),
-    v.transform(Number),
-    v.integer("Le prix doit être un nombre entier de centimes."),
-    v.minValue(0, "Le prix ne peut pas être négatif."),
-    v.maxValue(100_000, "Vérifiez ce prix.")
-  ),
+const VariantSchema = Schema.Struct({
+  detail: Schema.optional(Schema.NullOr(boundedString(0, 160))),
+  id: Schema.optional(UuidSchema),
+  label: Schema.optional(Schema.NullOr(boundedString(0, 60))),
+  priceCents: boundedNumberInput(0, 100_000, {
+    maximum: "Vérifiez ce prix.",
+    minimum: "Le prix ne peut pas être négatif.",
+  }),
 });
 
-export const MenuItemCreateSchema = v.object({
-  description: v.optional(v.pipe(v.string(), v.maxLength(600)), ""),
-  dietaryFlags: v.optional(v.array(v.pipe(v.string(), v.maxLength(60))), []),
-  featured: v.optional(v.boolean(), false),
+const VariantsSchema = mutableArray(VariantSchema).check(
+  Schema.isMinLength(1, { message: "Renseignez au moins un prix." }),
+  Schema.isMaxLength(12)
+);
+
+const DietaryFlagsSchema = defaulted(
+  mutableArray(boundedString(0, 60)),
+  [] as string[]
+);
+
+export const MenuItemCreateEffectSchema = Schema.Struct({
+  description: defaulted(boundedString(0, 600), ""),
+  dietaryFlags: DietaryFlagsSchema,
+  featured: defaulted(Schema.Boolean, false),
   mediaId: OptionalMediaSchema,
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(120)),
+  name: boundedString(2, 120, { trim: true }),
   sectionId: UuidSchema,
-  spiceLevel: v.optional(v.union([SpiceLevelSchema, v.null()])),
-  status: v.optional(MenuStatusSchema, "AVAILABLE"),
-  variants: v.pipe(
-    v.array(VariantSchema),
-    v.minLength(1, "Renseignez au moins un prix."),
-    v.maxLength(12)
-  ),
+  spiceLevel: Schema.optional(Schema.NullOr(SpiceLevelEffectSchema)),
+  status: defaulted(MenuStatusEffectSchema, "AVAILABLE"),
+  variants: VariantsSchema,
 });
+export const MenuItemCreateSchema = standard(MenuItemCreateEffectSchema);
 
-export const MenuItemUpdateSchema = v.object({
-  description: v.optional(v.pipe(v.string(), v.maxLength(600)), ""),
-  dietaryFlags: v.optional(v.array(v.pipe(v.string(), v.maxLength(60))), []),
-  featured: v.optional(v.boolean(), false),
+export const MenuItemUpdateEffectSchema = Schema.Struct({
+  description: defaulted(boundedString(0, 600), ""),
+  dietaryFlags: DietaryFlagsSchema,
+  featured: defaulted(Schema.Boolean, false),
   mediaId: OptionalMediaSchema,
-  name: v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(120)),
-  spiceLevel: v.optional(v.union([SpiceLevelSchema, v.null()])),
-  status: MenuStatusSchema,
+  name: boundedString(2, 120, { trim: true }),
+  spiceLevel: Schema.optional(Schema.NullOr(SpiceLevelEffectSchema)),
+  status: MenuStatusEffectSchema,
   /** Jeu complet de variantes : il remplace l'existant en une transaction. */
-  variants: v.pipe(
-    v.array(VariantSchema),
-    v.minLength(1, "Renseignez au moins un prix."),
-    v.maxLength(12)
-  ),
+  variants: VariantsSchema,
   version: VersionSchema,
 });
+export const MenuItemUpdateSchema = standard(MenuItemUpdateEffectSchema);
 
-export const MenuReorderSchema = v.object({
-  ids: v.pipe(v.array(UuidSchema), v.minLength(1), v.maxLength(500)),
-  scope: v.picklist(["categories", "sections", "items"]),
+export const MenuReorderEffectSchema = Schema.Struct({
+  ids: mutableArray(UuidSchema).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(500)
+  ),
+  scope: Schema.Literals(["categories", "sections", "items"]),
 });
+export const MenuReorderSchema = standard(MenuReorderEffectSchema);
 
-export type MenuStatus = v.InferOutput<typeof MenuStatusSchema>;
-export type SpiceLevel = v.InferOutput<typeof SpiceLevelSchema>;
-export type MenuQuery = v.InferOutput<typeof MenuQuerySchema>;
-export type UpdateMenuStatus = v.InferOutput<typeof UpdateMenuStatusSchema>;
-export type MenuCategoryCreate = v.InferOutput<typeof MenuCategoryCreateSchema>;
-export type MenuCategoryUpdate = v.InferOutput<typeof MenuCategoryUpdateSchema>;
-export type MenuSectionCreate = v.InferOutput<typeof MenuSectionCreateSchema>;
-export type MenuSectionUpdate = v.InferOutput<typeof MenuSectionUpdateSchema>;
-export type MenuItemCreate = v.InferOutput<typeof MenuItemCreateSchema>;
-export type MenuItemUpdate = v.InferOutput<typeof MenuItemUpdateSchema>;
-export type MenuReorder = v.InferOutput<typeof MenuReorderSchema>;
+export type MenuStatus = typeof MenuStatusEffectSchema.Type;
+export type SpiceLevel = typeof SpiceLevelEffectSchema.Type;
+export type MenuQuery = typeof MenuQueryEffectSchema.Type;
+export type UpdateMenuStatus = typeof UpdateMenuStatusEffectSchema.Type;
+export type MenuCategoryCreate = typeof MenuCategoryCreateEffectSchema.Type;
+export type MenuCategoryUpdate = typeof MenuCategoryUpdateEffectSchema.Type;
+export type MenuSectionCreate = typeof MenuSectionCreateEffectSchema.Type;
+export type MenuSectionUpdate = typeof MenuSectionUpdateEffectSchema.Type;
+export type MenuItemCreate = typeof MenuItemCreateEffectSchema.Type;
+export type MenuItemUpdate = typeof MenuItemUpdateEffectSchema.Type;
+export type MenuReorder = typeof MenuReorderEffectSchema.Type;
 
 export interface MenuVariantView {
   detail: string | null;
