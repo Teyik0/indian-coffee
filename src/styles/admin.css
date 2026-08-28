@@ -1,4 +1,11 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @import "./theme.css";
+
+@source "../admin";
+@source "../components/admin";
+@source "../components/ui";
 
 /**
  * Le back-office est un outil de service, pas une brochure : surface neutre,

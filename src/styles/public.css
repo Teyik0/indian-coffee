@@ -1,4 +1,11 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @import "./theme.css";
+
+@source "../pages";
+@source "../components/public";
+@source "../components/ui";
 
 /**
  * L'ancien fond superposait une photo `background-attachment: fixed` masquée à

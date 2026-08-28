@@ -7,6 +7,8 @@ import { PortalScope } from "@/components/ui/portal-scope";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { apiEffect, getApi, runLoaderEffect } from "@/lib/api-client";
+import { appUrl } from "@/lib/head";
+import { jsonLdScript, restaurantJsonLd } from "@/lib/structured-data";
 import "@/styles/public.css";
 
 export const route = createRoute({
@@ -22,7 +24,11 @@ export const route = createRoute({
         const footer = yield* Effect.tryPromise(() =>
           renderServerComponent(<PublicFooter content={content} />)
         );
-        return { ...content, footer };
+        return {
+          ...content,
+          footer,
+          jsonLd: jsonLdScript(restaurantJsonLd(content, appUrl)),
+        };
       })
     ),
   layout: ({ children, footer, openState, phone }) => (
